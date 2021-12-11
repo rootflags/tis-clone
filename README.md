@@ -24,7 +24,7 @@ Other Ubuntu packages which need to be installed:
 * wkhtmltopdf (required if you want to create PDFs)
 
 # Instructions
-Please see the HOWTO.md file
+Please see the [HOWTO.md](tis-clone/HOWTO.md) file
 
 # License
 This tool is freely licensed under the GPL.  If you paid for it, go ask for your money back.  You may download this tool and modify it, however any modifications must also be published and freely licensed under the GPL for others to use. 
