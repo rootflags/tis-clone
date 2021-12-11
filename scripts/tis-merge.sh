@@ -3,7 +3,7 @@
 # Merge any updates into your TIS website
 #
 
-. tis-clone.cfg
+. /etc/tis-clone.cfg
 
 if [ x$1 = x ]; then
 	echo "This command syncs any new updates into your existing TIS tree"

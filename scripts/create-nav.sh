@@ -3,7 +3,7 @@
 # Create Navigation files.  Part of a (currently manual) process to create HTML index pages
 #
 
-. tis-clone.cfg
+. /etc/tis-clone.cfg
 
 JSP=/t3Portal/resources/jsp
 

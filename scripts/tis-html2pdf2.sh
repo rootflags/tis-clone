@@ -3,7 +3,7 @@
 # Sample script 
 #
 
-. tis-clone.cfg
+. /etc/tis-clone.cfg
 
 echo "Sample only right now"
 exit

@@ -3,7 +3,7 @@
 # Remove external URLs from the FSM docs so that you don't get broken references
 #
 
-. tis-clone.cfg
+. /etc/tis-clone.cfg
 
 # First, remove duplicate redirect links
 echo "Removing duplicate linkage"

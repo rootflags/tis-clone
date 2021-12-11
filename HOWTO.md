@@ -1,5 +1,6 @@
 # How to Use the Scripts
-Install this software into /tis-clone
+* Install this software into /tis-clone
+* cp tis-clone.cfg /etc/
 
 Account Prep:
 * Get a TIS (techinfo.toyota.com) account, log in via Firefox or Chrome, then view your cookies.  You can do this on any computer you choose - it does not need to be the same one you'll be using to download

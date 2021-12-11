@@ -3,7 +3,7 @@
 # Download Electrical Manual docs
 #
 
-. tis-clone.cfg
+. /etc/tis-clone.cfg
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [GSIC_CODE]"

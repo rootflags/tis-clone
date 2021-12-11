@@ -3,7 +3,7 @@
 # Convert Repair Manual HTML webpages to PDFs
 #
 
-. tis-clone.cfg
+. /etc/tis-clone.cfg
 
 OPTIONS="--keep-relative-links"
 

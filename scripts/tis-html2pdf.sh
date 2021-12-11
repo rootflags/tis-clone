@@ -3,7 +3,7 @@
 # Convert HTML pages to PDFs and Consolidate PDFs into one location
 #
 
-. tis-clone.cfg
+. /etc/tis-clone.cfg
 
 ###
 ### Globals
