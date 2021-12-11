@@ -2,7 +2,7 @@
 Download a copy of the Toyota/Lexus/Scion electronic factory service manual
 
 # Description
-This package contains scripts and instructions for you to download your own copy of the Toyota, Lexus, or Scion online Factory Service Manual (FSM).  This tool is designed for personal use by home mechanics who want to work on their vehicle.  
+This package contains scripts and instructions for you to download your own copy of the Toyota, Lexus, or Scion online Factory Service Manual (FSM).  This tool is designed for personal use by home mechanics who want to work on their vehicle.  This tool has been tested with recent USA versions of the FSM; older documents and non-US FSM versions may not download correctly.
 
 # Requirements
 This has been tested on Ubuntu Linux 20.04 LTS but should work on most Linux systems.  It may also function under Cygwin and MacOS but has not been tested.  The following are the base Linux OS requirements:
