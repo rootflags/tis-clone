@@ -1,5 +1,5 @@
 # How to Use the Scripts
-* Install this software into /tis-clone
+* Install this software into /tis-clone.  If you put it somewhere else, modify $BASE in tis-clone.cfg with the location
 * cp tis-clone.cfg /etc/
 
 Account Prep:
@@ -12,7 +12,7 @@ Download Prep:
 * Determine the Repair Manual (RM), Wiring Diagram (EM or EWD), Body Repair (BM or CR), and New Car Feature (NM or NCF) identifier.  In this case it's "27J0U" since the folders in the URL have "rm/RM27J0U" or "ewd/EM27J0U"
 
 Downloading:
-1. Create a new working directory (i.e. mkdir /working/tis)
+1. Create a new working directory (i.e. mkdir /working/tis).  If you create a different location you'll need to modify tis-clone.cfg
 2. cd into that folder and run all of the downloader scripts using the identifier above:
          cd /working/tis
          for SCRIPT in `ls /tis-clone/scripts/dl-*`; do $SCRIPT $IDENTIFIER; done
