@@ -1,0 +1,103 @@
+#!/usr/bin/perl
+#
+# Create a navigation file for the website
+#
+
+use strict;
+use Data::Dumper;
+use XML::Simple;
+
+my $xml = new XML::Simple;
+my $toc  = $xml->XMLin($ARGV[0], ForceArray => 1) || die "Syntax: $0 toc.xml > nav_index.txt";
+my ($fromyear, $toyear, $nav);
+
+my $topic = $toc->{"name"}[0];
+
+
+foreach my $entry (@{$toc->{"item"}}) {
+	my ($cat1, $cat2, $cat3, $item, $link);
+
+	$cat1 = @{$entry->{"name"}}[0];
+	foreach my $tk (@{$entry->{"item"}}) {
+		$cat2 = $tk->{"name"}[0];
+		$cat2 = "Body" if ($cat2 eq "body");
+		foreach my $sk (@{$tk->{"item"}}) {
+			if ($sk->{"href"} ne "") {
+				$link = $sk->{"href"};
+				$item = @{$sk->{"name"}}[0];
+				push (@{$nav->{$topic}->{$cat1}->{$cat2}}, [$item, $link, $item]);
+			} else {
+				$cat3 = $sk->{"name"}[0];
+				$cat3 = "Body" if ($cat3 eq "body");
+				#my $i=0;
+				foreach my $nk (@{$sk->{"item"}}) {
+					#$fromyear = $sk->{"tocdata"}[$i]->{"fromyear"};
+					#$toyear = $sk->{"tocdata"}[$i]->{"toyear"};
+					#if ($fromyear <= $YEAR && $YEAR <= $toyear) {
+						$link = $nk->{"href"};
+						$item = @{$nk->{"name"}}[0];
+						push (@{$nav->{$topic}->{$cat1}->{$cat2}->{$cat3}}, [$item, $link, $item]);
+					#}
+					#$i++;
+				}
+			}
+		}
+	}
+}
+while (my ($key, $value) = each(%{$nav})) {
+	print "var TREE_ITEMS = [[\n";
+	print "  '$topic', \n";
+	print "  '', \n";
+	print "  '$topic', \n";
+	foreach my $topkey (sort keys %{$value}) {
+		print "    [ \n";
+		print "      '$topkey', \n";
+		print "      '', \n";
+		print "      '$topkey', \n";
+		foreach my $subkey (sort { $a cmp $b } keys %{$value->{$topkey}}) {
+			print "        [ \n";
+			print "          '$subkey', \n";
+			print "          '', \n";
+			print "          '$subkey', \n";
+			# If we have a 3rd tier, go deeper here
+			if (ref($value->{$topkey}->{$subkey}) eq "HASH") {
+				foreach my $nxtkey (sort { $a cmp $b } keys %{$value->{$topkey}->{$subkey}}) {
+					print "            [ \n";
+					print "              '$nxtkey', \n";
+					print "              '', \n";
+					print "              '$nxtkey', \n";
+					my @target;
+					foreach my $it (sort { $a->[0] cmp $b->[0] } @{$value->{$topkey}->{$subkey}->{$nxtkey}}) {
+						print "                [ \n";
+						print "                   '". clean(@{$it}[0]) ."', \n";
+						print "                   '". @{$it}[1] ."', \n";
+						print "                   '". clean(@{$it}[0]) ."', \n";
+						print "                ],\n";
+					}
+					print "            ],\n";
+				}
+			} else {
+			# Do this section if there is no additional tier
+				my @target;
+				foreach my $it (sort { $a->[0] cmp $b->[0] } @{$value->{$topkey}->{$subkey}}) {
+					print "            [ \n";
+					print "               '". clean(@{$it}[0]) ."', \n";
+					print "               '". @{$it}[1] ."', \n";
+					print "               '". clean(@{$it}[0]) ."', \n";
+					print "            ],\n";
+				}
+			}
+			print "        ],\n";
+		}
+		print "    ],\n";
+	}
+	print "]];\n";
+}
+
+
+sub clean {
+	my $i = shift;
+	$i =~ tr/\x80-\xFF/ /;
+	$i =~ s/'/\\'/g;
+	return $i;
+}

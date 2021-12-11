@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Split and re-merge PDF files.  
+#
+
+. tis-clone.cfg
+
+if [ x$1 = x ]; then
+	echo "Syntax: $0 [PDF files]"
+	echo "    ie: $0 file1.pdf file2.pdf morefiles*.pdf"
+	exit
+fi
+
+for f in `ls -1 $*`; do 
+	echo "Processing $f"
+	folder="new-${f}"
+	mkdir ${folder}
+	echo "  * Created ${folder}/"
+	pages=`pdfinfo ${f} 2>/dev/null| grep Pages | awk '{print $2}'`
+	echo "  * Splitting $pages pages"
+	for pg in `seq -w 1 ${pages}`; do 
+		pdfseparate -f ${pg} -l ${pg} ${f} ${folder}/${f}.p${pg} >> repdf.out 2>&1
+	done
+	newpages=`ls ${folder}|wc -l`
+	echo "  * Created $newpages new pages"
+	if [ x$pages != x$newpages ]; then
+		echo "DIE: $f had $pages pages but generated $newpages to ${folder}/"
+	else
+		echo "  * Merging back into a single PDF"
+		pdftk ${folder}/* output ${f} >> repdf.out 2>&1
+		rm -f ${folder}/${f}.p*
+		rmdir ${folder}
+	fi
+done

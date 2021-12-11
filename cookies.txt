@@ -1,0 +1,26 @@
+# These don't need to be modified
+.toyota.com	TRUE	/	FALSE	0	s_cc	true
+.toyota.com	TRUE	/	FALSE	0	OAMAuthnHintCookie	1
+techinfo.toyota.com	FALSE	/	FALSE	0	jreCheck	TRUE
+techinfo.toyota.com	FALSE	/	TRUE	0	t3.dmy	
+techinfo.toyota.com	FALSE	/	TRUE	0	t3.dmychange.cookie	true
+techinfo.toyota.com	FALSE	/	TRUE	0	t3.search.portlet.cookie	
+techinfo.toyota.com	FALSE	/	TRUE	0	t3.search.type.cookie	
+techinfo.toyota.com	FALSE	/	TRUE	0	t3.vincookie	
+
+
+# These DO need to be modified 
+
+## These 4 need column 5 changed as these must be future dates.  They may also need the last column updated/copied
+.toyota.com	TRUE	/	FALSE	1797024730	s_fid	317926B84566BDBE-05C111B55C00EF2C
+.toyota.com	TRUE	/	FALSE	1702330330.280183	s_vi	[CS]v1|30D8649D03587007-4000008FD169BB6C[CE]
+techinfo.toyota.com	FALSE	/	FALSE	1640122330	TITARGET	null
+techinfo.toyota.com	FALSE	/	FALSE	1640554330	TIUSERNAME	your_tis_emailaddress@domain.com
+
+## For these you only need to modify the last column, just copy the value from your web brower cookie here
+.toyota.com	TRUE	/	FALSE	0	OAM_GITO	zdIRaCrMAntCutoKj2hPEQ==~1MKoJSyVmkP0KDalVfMfR2DHqtrizFMxMko8jzD7Flbk7/4NH5ky5DKy7UTAMqQwFsNjEa29UK7+1OVRFT6zSTmL7H7BHx0zWmktWHIFotypFvF/bte3g5aRIBCZy26w3mifQlm3xELIQbo86zVYW5oteslQJ2U2Yan3IYWbxj2CJVl9ODfCnH+uCymFwtviScXoEHDLBuAEXsLbOPolQ2d/NEJKim7HyIhrT9tyzlKIYtX45j2jixQQk4mq/ma6
+.toyota.com	TRUE	/	FALSE	0	ADRUM	s=1639236614490&r=https%3A%2F%2Ftechinfo.toyota.com%2Ft3Portal%2Fappmanager%2Ft3%2Fti%3F1504897046
+techinfo.toyota.com	FALSE	/	TRUE	0	_WL_AUTHCOOKIE_T3SESSIONID	XplGhy8xaesNEORlQOaF
+techinfo.toyota.com	FALSE	/	TRUE	0	OAMAuthnCookie_techinfo.toyota.com:443	JodqNVIJTJuNwX5x%2FyZwbtEkTc6toyMKkrOiRu06A%2BF2RlWkpv%2Ft386hMX1UPGNju0Z7IJHBOMUe7hQ5i%2FfammWQ178iHsSaOZpKrjD7DFP6yaCjc9%2Fmr2u8edIj1W2FHe4I%2B%2Fg4Q1GwSas8nl9cbd7J8UmpYnRfc4mpl9Fc4FTGlr1kUzyC3k7PXlDT%2FIRbdC%2FhX56gUj4gi80ukNBT%2BwjvNR62yT3U4ZHL9kjmbtT5RXMbofLeh1ruHuP3dy4%2B1RLe6qVdvwdKJUiP6mSkv%2B7CFhMYPcX237nZIt3r4kBVI21m4LNG21A4CkV1%2BiJsmTU%2FckenGx6dedP%2BNfc4DjXBGlm4IoynDeUfBP%2B80LIqn1ChSCiXgTjfCYwmKexORKakiizklPzFKnVW1gGZG4rgICRdHYNIsHsZ0pTIShGH2SQ2JU7qRS4pCw3NydqZFwPzr74Es1NtOEk9nYS9SIbnW0rUYhelrqrQuHQ5Wu60KKowXgBxICzHf1bvlm0M
+techinfo.toyota.com	FALSE	/	FALSE	0	TISESSIONID	l1VVh0DJjQywmPZSvLnyy1MPqYNQjtv420cTJ5Hrp2DTGcbnsy2S!-347489093
+techinfo.toyota.com	FALSE	/	FALSE	0	T3SESSIONID	JlLTh0Dd7Ny9KZKHRQWmRnKp3pG6yQSCgjvsGcJRJWyXGljK8wFh!812810156

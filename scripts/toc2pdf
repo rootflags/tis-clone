@@ -1,0 +1,100 @@
+#!/usr/bin/perl
+#
+# Create a navigation file for the PDFs on the website
+#
+
+use strict;
+use Cwd qw(getcwd);
+use Data::Dumper;
+use List::MoreUtils qw(uniq);
+use Switch;
+use XML::Simple;
+
+my $xml = new XML::Simple;
+my $toc  = $xml->XMLin($ARGV[0], ForceArray => 1) || die "Syntax: $0 toc.xml /path/to/PDF/folder";
+my $nav;
+
+$ENV{'TMPDIR'}="/tmp";
+my $BASEDIR = getcwd;
+
+my $topic = $toc->{"name"}[0];
+
+my (@bits) = split(/\s/, $topic);
+my $DOCID = pop(@bits);
+$DOCID =~ s/[)(]//g;
+
+my $PDFDIR=$ARGV[1];
+exit "Syntax: $0 toc.xml /path/to/PDF/folder/" if (!$PDFDIR);
+
+my @YEARS;
+foreach my $yearhash (@{$toc->{"termdata"}[0]->{"yeardata"}}){
+	push(@YEARS, $yearhash->{"model-year"});
+}
+
+foreach my $YYYY (sort @YEARS) {
+	foreach my $entry (@{$toc->{"item"}}) {
+		my ($cat1, $cat2, $cat3, $item, $link);
+
+		$cat1 = @{$entry->{"name"}}[0];
+		foreach my $hash2 (@{$entry->{"item"}}) {
+			$cat2 = $hash2->{"name"}[0];
+			$cat2 = "Body" if ($cat2 eq "body");
+	
+			foreach my $hash3 (@{$hash2->{"item"}}) {
+				$cat3 = $hash3->{"name"}[0];
+				$cat3 = "Body" if ($cat3 eq "body");
+		
+				for (my $POS=0; $POS < $#{$hash3->{"tocdata"}}; $POS++) {
+					my $hash4 = @{$hash3->{"item"}}[$POS];
+			    		my $fromyear = $hash3->{"tocdata"}[$POS]->{"fromyear"};
+   					my $toyear   = $hash3->{"tocdata"}[$POS]->{"toyear"};
+
+					$link = $hash4->{"href"};
+					$item = @{$hash4->{"name"}}[0] || $hash4->{"name"};
+       		 			if ($fromyear <= $YYYY && $YYYY <= $toyear) {
+       		     				push (@{$nav->{$topic}->{$cat1}->{$cat2}->{$cat3}}, [$item, $link, $item]);
+       					}
+				}
+			}
+		}
+	}
+
+	my $out;
+	while (my ($key, $value) = each(%{$nav})) {
+		foreach my $topkey (sort keys %{$value}) {
+			foreach my $subkey (sort { $a cmp $b } keys %{$value->{$topkey}}) {
+				foreach my $nxtkey (sort { $a cmp $b } keys %{$value->{$topkey}->{$subkey}}) {
+					foreach my $it (sort { $a->[0] cmp $b->[0] } @{$value->{$topkey}->{$subkey}->{$nxtkey}}) {
+						my $href = @{$it}[1];
+						$href=~s/.html$/.pdf/;
+						push(@{$out->{$topkey}}, $href);
+					}
+				}
+			}
+		}
+	}
+
+	foreach my $key (keys %{$out}) {
+		my $list;
+		my $section = $key;
+		$section =~ s/[ \/-]//g;
+		foreach my $pdf (uniq(@{$out->{"$key"}})) {
+			$list .= $BASEDIR . "/" . $pdf . " ";
+		}
+		my $type;
+		if ($DOCID =~ /^RM/)    { $type = "RepairManual"; }
+		elsif ($DOCID =~ /^NM/) { $type = "NewCarFeatures"; }
+		elsif ($DOCID =~ /^BM/) { $type = "BodyRepair"; }
+		elsif ($DOCID =~ /^EM/) { $type = "ElectricalWiringDiagram"; }
+		print "Creating $PDFDIR/$type-$DOCID-$section-$YYYY.pdf\n";
+		`gs -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dNOPAUSE -dBATCH -sOutputFile=$PDFDIR/$type-$DOCID-$section-$YYYY.pdf $list`;
+	}
+}
+
+
+sub clean {
+	my $i = shift;
+	$i =~ tr/\x80-\xFF/ /;
+	$i =~ s/'/\\'/g;
+	return $i;
+}
