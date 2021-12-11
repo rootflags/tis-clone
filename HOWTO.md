@@ -14,7 +14,7 @@ Downloading:
 1. Create a new working directory (i.e. mkdir /working/tis)
 2. cd into that folder and run all of the downloader scripts using the identifier above:
          cd /working/tis
-         for SCRIPT in `ls /scripts/dl-*`; do $SCRIPT $IDENTIFIER; done
+         for SCRIPT in `ls /tis-clone/scripts/dl-*`; do $SCRIPT $IDENTIFIER; done
    If the identifiers are different per section just run the relevant ones
 
 Clean up:
