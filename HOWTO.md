@@ -20,12 +20,19 @@ Downloading:
 
 Clean up:
 * Run tis-urlstripper.sh to remove external URLs and remove various garbage that gets created
-* Run tis-rehack.sh to apply a few javacsript files which were modified because the originals won't work locally
+? Run tis-rehack.sh to apply a few javacsript files which were modified because the originals won't work locally
 
 Create PDFs, if you want them:
 * /tis-clone/scripts/tis-mkpdfs.sh
 
 Create Navigation:
+For HTML docs:
+* /tis-clone/scripts/build-index.pl > /working/tis/techinfo.toyota.com/index.html
+
+For PDF docs:
+* (TBD)
+
+Create Navigation (old ISO method, no longer valid):
 This is pretty manual.  It would be great to automate this in a future version
 * cd t3Portal/external/en/{ncf,cr,rm}/$IDENTIFIER
 * run /tis-clone/scripts/toc2nav toc.xml > /tmp/navarray.txt

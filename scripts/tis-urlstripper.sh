@@ -5,13 +5,18 @@
 
 . /etc/tis-clone.cfg
 
+FOLDER=$1
+if [ x${FOLDER} = x ]; then
+	FOLDER="."
+fi
+
 # First, remove duplicate redirect links
 echo "Removing duplicate linkage"
-find . -name *linkId=* -exec rm -f "{}" \;
+find ${FOLDER} -name *linkId=* -exec rm -f "{}" \;
 
 # Then purge any external URLs from the HTML/XML files
 X=0
-FILES=`find . -type f|egrep '\.(xml|htm|html|xsl|js|css)'|cut -d: -f1|sort -u`
+FILES=`find ${FOLDER} -type f|egrep '\.(xml|htm|html|xsl|js|css|jsp)'|cut -d: -f1|sort -u`
 for F in $FILES; do
 	X=`expr $X + 1`
 	echo "Processing $F ($X)"

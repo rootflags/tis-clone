@@ -1,0 +1,119 @@
+#!/usr/bin/perl
+#
+# Create a navigation file for the website
+#
+
+use strict;
+use Data::Dumper;
+use XML::Simple;
+
+my $xml = new XML::Simple;
+my $toc  = $xml->XMLin($ARGV[0], ForceArray => 1) || die "Syntax: $0 toc.xml > nav_index.txt";
+my ($fromyear, $toyear, $nav);
+
+my $topic = $toc->{"name"}[0];
+
+
+foreach my $entry (@{$toc->{"item"}}) {
+	my ($cat1, $cat2, $cat3, $item, $link);
+
+	$cat1 = @{$entry->{"name"}}[0];
+	foreach my $tk (@{$entry->{"item"}}) {
+		$cat2 = $tk->{"name"}[0];
+		$cat2 = "Body" if ($cat2 eq "body");
+		foreach my $sk (@{$tk->{"item"}}) {
+			if ($sk->{"href"} ne "") {
+				$link = $sk->{"href"};
+				$item = @{$sk->{"name"}}[0];
+				push (@{$nav->{$topic}->{$cat1}->{$cat2}}, [$item, $link, $item]);
+			} else {
+				$cat3 = $sk->{"name"}[0];
+				$cat3 = "Body" if ($cat3 eq "body");
+				#my $i=0;
+				foreach my $nk (@{$sk->{"item"}}) {
+					#$fromyear = $sk->{"tocdata"}[$i]->{"fromyear"};
+					#$toyear = $sk->{"tocdata"}[$i]->{"toyear"};
+					#if ($fromyear <= $YEAR && $YEAR <= $toyear) {
+						$link = $nk->{"href"};
+						$item = @{$nk->{"name"}}[0];
+						push (@{$nav->{$topic}->{$cat1}->{$cat2}->{$cat3}}, [$item, $link, $item]);
+					#}
+					#$i++;
+				}
+			}
+		}
+	}
+}
+my ($sub1, $sub2, $sub3);
+while (my ($key, $value) = each(%{$nav})) {
+	print '<!DOCTYPE html><html><head><title>';
+	print "\n$topic\n";
+	print '</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="/bootstrap.min.css">
+  </head>
+  <body>
+
+ <ul class="nav flex-column flex-nowrap">';
+	print "<b>$topic</b>\n";
+	print "  <ul class='nav flex-column flex-nowrap'>\n";
+	foreach my $topkey (sort keys %{$value}) {
+		$sub1++;
+		print "    <li class='nav-item drop'>\n";
+                print "    <a class='nav-link collapsed' href='#submenu". $sub1 ."' data-toggle='collapse' >+ $topkey</a>\n";
+		print "    <div class='collapse' id='submenu". $sub1 ."' aria-expanded='false'>\n";
+                print "    <ul class='flex-column nav' style='padding:0px 0px 0px 40px;'>\n";
+		foreach my $subkey (sort { $a cmp $b } keys %{$value->{$topkey}}) {
+			$sub2++;
+			print "      <li class='nav-item'><a class='nav-link collapsed py-0' href='#submenu". $sub1 ."sub". $sub2 ."' data-toggle='collapse'>- $subkey</a></li>\n";
+			# If we have a 3rd tier, go deeper here
+			if (ref($value->{$topkey}->{$subkey}) eq "HASH") {
+				print "      <div class='collapse' id='submenu". $sub1 ."sub". $sub2 ."' aria-expanded='false'>\n";
+                                print "      <ul class='flex-column nav'>\n";
+
+				foreach my $nxtkey (sort { $a cmp $b } keys %{$value->{$topkey}->{$subkey}}) {
+					$sub3++;
+					print "        <li class='nav-item'><a class='nav-link collapsed py-1'  data-toggle='collapse' href='#submenu". $sub1 ."sub". $sub2 ."sub". $sub3 ."' style='padding:0px 0px 0px 50px;'>\n";
+                                        print "        <i class='fa fa-fw fa-clock-o'></i>$nxtkey</a>\n";
+					my @target;
+					print "        <div class='collapse' id='submenu". $sub1 ."sub". $sub2 ."sub". $sub3 ."' aria-expanded='false'>\n";
+                                	print "        <ul class='flex-column nav'>\n";
+					foreach my $it (sort { $a->[0] cmp $b->[0] } @{$value->{$topkey}->{$subkey}->{$nxtkey}}) {
+						print "          <li class='nav-item' style='padding:0px 0px 0px 80px;'><a class='nav-link' target='manual_frame' href='". @{$it}[1] ."'>\n";
+                                        	print "          <i class='fa fa-fw fa-clock-o'></i>". clean(@{$it}[0])."</a></li>\n";
+					}
+					print "        </ul></div></li>\n";
+				}
+				print "      </ul></div></li>\n";
+			} else {
+			# Do this section if there is no additional tier
+				print "      <div class='collapse' id='submenu". $sub1 ."sub". $sub2 ."' aria-expanded='false'>\n";
+                                print "      <ul class='flex-column nav'>\n";
+				my @target;
+				foreach my $it (sort { $a->[0] cmp $b->[0] } @{$value->{$topkey}->{$subkey}}) {
+					print "        <li class='nav-item' style='padding:0px 0px 0px 80px;'><a class='nav-link' target='manual_frame' href='". @{$it}[1] ."'>\n";
+                                        print "        <i class='fa fa-fw fa-clock-o'></i>". clean(@{$it}[0])."</a></li>\n";
+				}
+				print "      </ul></div></li>\n";
+			}
+		}
+		print "    </ul></div>\n";
+	}
+	print "  </ul>\n";
+print '    <script
+            src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>';
+}
+
+
+sub clean {
+	my $i = shift;
+	$i =~ tr/\x80-\xFF/ /;
+	$i =~ s/'/\\'/g;
+	return $i;
+}

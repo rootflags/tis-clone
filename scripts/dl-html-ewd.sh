@@ -11,7 +11,12 @@ if [ x$1 = x ]; then
 	exit
 fi
 
-EM=EWD${1}
+if [ x$2 = xEM ]; then
+	EM=EM${1}
+else
+	EM=EWD${1}
+fi
+
 
 ##
 ## Get Wiring Diagrams
