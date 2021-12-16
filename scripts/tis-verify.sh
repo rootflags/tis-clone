@@ -5,5 +5,9 @@
 
 . /etc/tis-clone.cfg
 
-cd ${FSM_URLBASE}
+if [ x$1 = x ]; then
+	cd ${FSM_URLBASE}
+else
+	cd $1
+fi
 grep -r "TIS is your service support source" * 
