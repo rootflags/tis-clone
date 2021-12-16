@@ -14,13 +14,16 @@ Download Prep:
 Downloading:
 1. Create a new working directory (i.e. mkdir /working/tis).  If you create a different location you'll need to modify tis-clone.cfg
 2. cd into that folder and run all of the downloader scripts using the identifier above:
+
          cd /working/tis
-         for SCRIPT in `ls /tis-clone/scripts/dl-*`; do $SCRIPT $IDENTIFIER; done
-   If the identifiers are different per section just run the relevant ones
+         for SCRIPT in `ls /tis-clone/scripts/dl-*`; do 
+                 $SCRIPT $IDENTIFIER
+         done
+
+If the identifiers are different per section just run the relevant ones.  This can happen when multiple model years share some but not all docs
 
 Clean up:
 * Run tis-urlstripper.sh to remove external URLs and remove various garbage that gets created
-? Run tis-rehack.sh to apply a few javacsript files which were modified because the originals won't work locally
 
 Create PDFs, if you want them:
 * /tis-clone/scripts/tis-mkpdfs.sh
