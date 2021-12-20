@@ -69,10 +69,11 @@ $WG ${WEBSITE}/t3Portal/stylegraphics/header-left.gif
 $WG ${WEBSITE}/t3Portal/stylegraphics/header-right.gif
 
 # Download siviewer, which is the navigation menus.  Then fix the 
-${WG} "${WEBSITE}/t3Portal/resources/jsp/siviewer/index.jsp?dir=rm/RM27J0U&href=xhtml/RM100000000SXI0.html&locale=en&model=Land%20Cruiser&MY=2020&t3id=RM100000000SXI0&User=false&publicationNumber=RM27J0U&objType=rm&docid=en_rm_RM27J0U_RM100000000SXI0&context=ti"
-for f in `ls -1 ${FSM_URLBASE}/t3Portal/resources/jsp/siviewer/*\?*`; do 
- 	NEW=`echo $f | cut -d\? -f1`
-	mv "$f" "$NEW"
+${WG} ${WEBSITE}'/t3Portal/resources/jsp/siviewer/index.jsp?dir=rm/RM27J0U&href=xhtml/RM100000000SXI0.html&locale=en&model=Land%20Cruiser&MY=2020&t3id=RM100000000SXI0&User=false&publicationNumber=RM27J0U&objType=rm&docid=en_rm_RM27J0U_RM100000000SXI0&context=ti'
+ls -1 ${FSM_URLBASE}/t3Portal/resources/jsp/siviewer/*\?* | sort | while read -r WEBFILE
+do
+ 	NEW=`echo $WEBFILE | cut -d\? -f1`
+	mv "$WEBFILE" "$NEW"
 done
 
 # Strip out external URL calls
