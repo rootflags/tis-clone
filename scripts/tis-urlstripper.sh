@@ -7,7 +7,7 @@
 
 FOLDER=$1
 if [ x${FOLDER} = x ]; then
-	FOLDER="."
+	FOLDER=${FSM_URLBASE}
 fi
 
 # First, remove duplicate redirect links
