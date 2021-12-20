@@ -27,7 +27,7 @@ If the identifiers are different per section just run the relevant ones.  This c
 * Run ```/tis-clone/scripts/tis-urlstripper.sh``` to remove external URLs and remove various garbage that gets created
 
 6. Create PDFs, if you want them:
-* ```/tis-clone/scripts/tis-mkpdfs.sh```
+* ```/tis-clone/scripts/tis-mkpdfs.sh $IDENTIFIER```
 
 7. Create Navigation:
 * For HTML docs: ```/tis-clone/scripts/build-index.pl > /working/tis/techinfo.toyota.com/index.html```
