@@ -23,18 +23,21 @@
 
 If the identifiers are different per section just run the relevant ones.  This can happen when multiple model years share some but not all docs
 
-5. Clean up a ton of unneeded links and external website references that won't work locally:
+5. Download the website framework
+* ```/tis-clone/scripts/dl-framework.sh```
+
+6. Clean up a ton of unneeded links and external website references that won't work locally:
 * Run ```/tis-clone/scripts/tis-urlstripper.sh``` to remove external URLs and remove various garbage that gets created
 
-6. Create PDFs, if you want them:
+7. Create PDFs, if you want them:
 * ```/tis-clone/scripts/tis-mkpdfs.sh $IDENTIFIER```
 
-7. Create Navigation:
+8. Create Navigation:
 * For HTML docs: ```/tis-clone/scripts/build-index.pl > /working/tis/techinfo.toyota.com/index.html```
 
 * For PDF docs: ```/tis-clone/scripts/build-pdfidx.sh > /working/tis/techinfo.toyota.com/PDFs/index.html```
 
-8. If you have an existing version that you're updating or adding additional vehicles to, merge into existing site: ```/tis-clone/scripts/tis-merge.sh```
+9. If you have an existing version that you're updating or adding additional vehicles to, merge into existing site: ```/tis-clone/scripts/tis-merge.sh```
 
 # How to use what you just downloaded
 While you can locally browse the "HTML" files you download using your web browser, typical browser security prevents the Javascript used in the website from reading local files off your PC.  Normally that security restriction is a good thing, but in this case it makes displaying the website a challenge as many of the pages will display but the links won't work, or only part of the page will display.
