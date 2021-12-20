@@ -2,6 +2,8 @@
 # 
 # Create Navigation files.  Part of a (currently manual) process to create HTML index pages
 #
+# NOTE: This is generally not used anymore
+#
 
 . /etc/tis-clone.cfg
 

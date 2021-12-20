@@ -6,12 +6,20 @@
 use strict;
 use Cwd qw(getcwd);
 use Data::Dumper;
+use Getopt::Long;
 use List::MoreUtils qw(uniq);
 use Switch;
 use XML::Simple;
 
 my $xml = new XML::Simple;
-my $toc  = $xml->XMLin($ARGV[0], ForceArray => 1) || die "Syntax: $0 toc.xml /path/to/PDF/folder";
+my ($tocfile, $PDFDIR);
+GetOptions(
+	"x=s" => \$tocfile,
+	"p=s" => \$PDFDIR
+);
+exit "Missing toc.xml" if (!-f $tocfile);
+exit "Syntax: $0 toc.xml /path/to/PDF/folder/" if (!$PDFDIR);
+my $toc  = $xml->XMLin($tocfile, ForceArray => 1) || die "Syntax: $0 toc.xml /path/to/PDF/folder";
 my $nav;
 
 $ENV{'TMPDIR'}="/tmp";
@@ -23,8 +31,6 @@ my (@bits) = split(/\s/, $topic);
 my $DOCID = pop(@bits);
 $DOCID =~ s/[)(]//g;
 
-my $PDFDIR=$ARGV[1];
-exit "Syntax: $0 toc.xml /path/to/PDF/folder/" if (!$PDFDIR);
 
 my @YEARS;
 foreach my $yearhash (@{$toc->{"termdata"}[0]->{"yeardata"}}){
@@ -86,8 +92,8 @@ foreach my $YYYY (sort @YEARS) {
 		elsif ($DOCID =~ /^NM/) { $type = "NewCarFeatures"; }
 		elsif ($DOCID =~ /^BM/) { $type = "BodyRepair"; }
 		elsif ($DOCID =~ /^EM/) { $type = "ElectricalWiringDiagram"; }
-		print "Creating $PDFDIR/$type-$DOCID-$section-$YYYY.pdf\n";
-		`gs -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dNOPAUSE -dBATCH -sOutputFile=$PDFDIR/$type-$DOCID-$section-$YYYY.pdf $list`;
+		print "* Creating $PDFDIR/$type-$DOCID-$section-$YYYY.pdf\n";
+		`gs -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dNOPAUSE -dBATCH -sOutputFile="$PDFDIR"/$type-$DOCID-$section-$YYYY.pdf $list`;
 	}
 }
 

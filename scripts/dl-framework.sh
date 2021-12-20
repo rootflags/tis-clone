@@ -5,6 +5,9 @@
 
 . /etc/tis-clone.cfg
 
+# Set up local website framework CSS
+cp -a ${BASE}/website-framework/* ${FSM_URLBASE}/
+
 # ewd.js requires a change to force using the uncompressed SVG images.
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/ewd.js
 mv -f ${FSM_URLBASE}/t3Portal/external/en/ewdappu/system/js/ewd/ewd.js ${FSM_URLBASE}/t3Portal/external/en/ewdappu/system/js/ewd/ewd.js.orig

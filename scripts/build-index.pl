@@ -40,7 +40,7 @@ foreach my $DOC (sort(`find $FSM_URLBASE/t3Portal/external/en/ewdappu -name term
 }
 
 # Then print the sorted list
-print '<head><link rel="stylesheet" href="/bootstrap.min.css"></head>
+print '<head><link rel="stylesheet" href="/framework/bootstrap.min.css"></head>
 <body style="padding:0px; margin:0px;">
 <img src="t3Portal/resources/images/globals/header/headerbar.bg.blu.gif" style="width:100%; height:40px; margin:0px; border:0px; padding:0px">
 <div class="nav-link">
