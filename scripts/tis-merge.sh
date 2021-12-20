@@ -14,7 +14,8 @@ fi
 TARGET=$1
 
 # First, reapply any javascript modifications required
-${SCRIPT_BASE}/tis-rehack.sh
+#${SCRIPT_BASE}/tis-rehack.sh
+# The above is no longer required with the new website framework
 
 # Then sync the whole thing over
 rsync ./ $TARGET/ -a -v --progress                                                                                 
