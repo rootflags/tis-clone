@@ -4,7 +4,7 @@
 
 Account Prep:
 * Get a TIS (techinfo.toyota.com) account, log in via Firefox or Chrome, then view your cookies.  You can do this on any computer you choose - it does not need to be the same one you'll be using to download
-* Edit the .cookies.txt and update anything different.  Note that for non-session cookies you'll need to convert the current date plus a few days to the unix epoch date, then update those cookie fields
+* Edit /tis-clone/cookies.txt and update anything different.  Note that for non-session cookies you'll need to convert the current date plus a few days to the unix epoch date, then update those cookie fields
 * Leave your web browser open in the background while downloading so your sessions cookies stay valid
 
 Download Prep:
@@ -23,17 +23,15 @@ Downloading:
 If the identifiers are different per section just run the relevant ones.  This can happen when multiple model years share some but not all docs
 
 Clean up:
-* Run tis-urlstripper.sh to remove external URLs and remove various garbage that gets created
+* Run ```/tis-clone/scripts/tis-urlstripper.sh``` to remove external URLs and remove various garbage that gets created
 
 Create PDFs, if you want them:
-* /tis-clone/scripts/tis-mkpdfs.sh
+* ```/tis-clone/scripts/tis-mkpdfs.sh```
 
 Create Navigation:
-For HTML docs:
-* /tis-clone/scripts/build-index.pl > /working/tis/techinfo.toyota.com/index.html
+* For HTML docs: ```/tis-clone/scripts/build-index.pl > /working/tis/techinfo.toyota.com/index.html```
 
-For PDF docs:
-* (TBD)
+* For PDF docs: ```/tis-clone/scripts/build-pdfidx.sh > /working/tis/techinfo.toyota.com/PDFs/index.html```
 
 Create Navigation (old ISO method, no longer valid):
 This is pretty manual.  It would be great to automate this in a future version
@@ -46,7 +44,8 @@ This is pretty manual.  It would be great to automate this in a future version
 
 
 If you have an existing version that you're updating or adding additional vehicles to, merge into existing site:
-/tis-clone/scripts/tis-merge.sh
+
+  /tis-clone/scripts/tis-merge.sh
 
 # How to use what you just downloaded
 While you can locally browse the "HTML" files you download using your web browser, typical browser security prevents the Javascript used in the website from reading local files off your PC.  Normally that security restriction is a good thing, but in this case it makes displaying the website a challenge as many of the pages will display but the links won't work, or only part of the page will display.
