@@ -13,6 +13,7 @@ This has been tested on Ubuntu Linux 20.04 LTS but should work on most Linux sys
 A recent version of Perl 5 is required.  You will need the following modules:
 * Cwd (Included in the Ubuntu libperl5.30 package)
 * Data::Dumper (Included in the Ubuntu libperl5.30 package)
+* Getopt::Long (Included in the Ubuntu libperl5.30 package)
 * List::MoreUtils (On Ubuntu: apt install liblist-moreutils-perl)
 * Switch (On Ubuntu: apt install libswitch-perl)
 * XML::Simple (On Ubuntu: apt install libxml-simple-perl)
