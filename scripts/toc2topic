@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+#
+# Extract the category name from a toc.xml file
+#
+
+use strict;
+use Cwd qw(getcwd);
+use Data::Dumper;
+use List::MoreUtils qw(uniq);
+use Switch;
+use XML::Simple;
+
+my $xml = new XML::Simple;
+my $toc  = $xml->XMLin($ARGV[0], ForceArray => 1) || die "Syntax: $0 toc.xml";
+my $nav;
+
+$ENV{'TMPDIR'}="/tmp";
+my $BASEDIR = getcwd;
+
+my $topic = $toc->{"name"}[0] || @{$toc->{"pubtitle"}}[0];
+$topic=~s/ (Body|Collision|Repair|New Car|Electrical).*$//g;
+print "$topic\n";
