@@ -20,15 +20,15 @@ find PDFs -mindepth 1 -maxdepth 1 -type d | sort | while read -r FOLDER
 do
 	sub1=`expr $sub1 + 1`;
 	TITLE=`echo ${FOLDER} | sed -e 's;PDFs/;;g'`
-	echo "    <li class='nav-item drop'>\n";
-        echo "    <a class='nav-link collapsed' href='#submenu${sub1}' data-toggle='collapse' >+ ${TITLE}</a>\n";
-	echo "    <div class='collapse' id='submenu${sub1}' aria-expanded='false'>\n";
-        echo "    <ul class='flex-column nav' style='padding:0px 0px 0px 40px;'>\n";
+	echo "    <li class=\"nav-item drop\">\n";
+        echo "    <a class=\"nav-link collapsed\" href=\"#submenu${sub1}\" data-toggle=\"collapse\" >+ ${TITLE}</a>\n";
+	echo "    <div class=\"collapse\" id=\"submenu${sub1}\" aria-expanded=\"false\">\n";
+        echo "    <ul class=\"flex-column nav\" style=\"padding:0px 0px 0px 40px;\">\n";
 	cd "${FOLDER}"
 	MODEL=`echo ${FOLDER} | sed -e 's;^PDFs/;;g'`
 	for PDF in `ls -1`; do
 		FOLDER_URL=`echo ${FOLDER} | sed -e 's/ /\%20/g;'`
-		echo "      <li class='nav-item'><a class='nav-link py-0' href='/${FOLDER_URL}/${PDF}' data-toggle='collapse' target="new"><i class="fa fa-fw fa-clock-o"></i>- ${PDF}</a></li>\n";
+		echo "      <li class=\"nav-item\"><a class=\"nav-link py-0\" href=\"/${FOLDER_URL}/${PDF}\" target=\"new\"><i class=\"fa fa-fw fa-clock-o\"></i>- ${PDF}</a></li>\n";
 	done
 	echo "    </ul></div>\n";
 	cd - > /dev/null 2>&1
