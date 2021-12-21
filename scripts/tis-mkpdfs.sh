@@ -49,7 +49,7 @@ if [ -d t3Portal/document/ncf/NM${GSICCODE}/xhtml ]; then
 	echo "Consolidating PDFs for NM${GSICCODE}"
 	cd ../../../../../
 	if [ x"${MODEL}" = x ]; then
-		MODEL=`${SCRIPT_BASE}/toc2topic t3Portal/external/en/cr/BM${GSICCODE}/toc.xml`
+		MODEL=`${SCRIPT_BASE}/toc2topic t3Portal/external/en/ncf/NM${GSICCODE}/toc.xml`
 		mkdir -p "${PDFDIR}/${MODEL}"
 	fi
 	${SCRIPT_BASE}/toc2pdf -x t3Portal/external/en/ncf/NM${GSICCODE}/toc.xml -p "${PDFDIR}/${MODEL}"
@@ -64,11 +64,12 @@ if [ -d t3Portal/document/rm/RM${GSICCODE}/xhtml ]; then
 	echo "Consolidating PDFs for RM${GSICCODE}"
 	cd ../../../../../
 	if [ x"${MODEL}" = x ]; then
-		MODEL=`${SCRIPT_BASE}/toc2topic t3Portal/external/en/cr/BM${GSICCODE}/toc.xml`
+		MODEL=`${SCRIPT_BASE}/toc2topic t3Portal/external/en/rm/RM${GSICCODE}/toc.xml`
 		mkdir -p "${PDFDIR}/${MODEL}"
 	fi
+	echo "Running:" ${SCRIPT_BASE}/toc2pdf -x t3Portal/external/en/rm/RM${GSICCODE}/toc.xml -p "${PDFDIR}/${MODEL}"
 	${SCRIPT_BASE}/toc2pdf -x t3Portal/external/en/rm/RM${GSICCODE}/toc.xml -p "${PDFDIR}/${MODEL}"
-	rm -f t3Portal/document/rm/RM${GSICCODE}/xhtml/*.pdf
+	#rm -f t3Portal/document/rm/RM${GSICCODE}/xhtml/*.pdf
 fi
 
 ###

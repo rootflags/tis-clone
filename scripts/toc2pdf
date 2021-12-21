@@ -37,6 +37,8 @@ foreach my $yearhash (@{$toc->{"termdata"}[0]->{"yeardata"}}){
 	push(@YEARS, $yearhash->{"model-year"});
 }
 
+push (@YEARS, "NONE") if ($#YEARS = -1);
+
 foreach my $YYYY (sort @YEARS) {
 	foreach my $entry (@{$toc->{"item"}}) {
 		my ($cat1, $cat2, $cat3, $item, $link);
@@ -50,7 +52,13 @@ foreach my $YYYY (sort @YEARS) {
 				$cat3 = $hash3->{"name"}[0];
 				$cat3 = "Body" if ($cat3 eq "body");
 		
-				for (my $POS=0; $POS < $#{$hash3->{"tocdata"}}; $POS++) {
+				if ($YYYY eq "NONE") {
+					my $hash4 = @{$hash3->{"item"}}[0];
+					$link = $hash4->{"href"};
+					$item = @{$hash4->{"name"}}[0] || $hash4->{"name"};
+       		     			push (@{$nav->{$topic}->{$cat1}->{$cat2}->{$cat3}}, [$item, $link, $item]);
+				} else {
+				    for (my $POS=0; $POS < $#{$hash3->{"tocdata"}}; $POS++) {
 					my $hash4 = @{$hash3->{"item"}}[$POS];
 			    		my $fromyear = $hash3->{"tocdata"}[$POS]->{"fromyear"};
    					my $toyear   = $hash3->{"tocdata"}[$POS]->{"toyear"};
@@ -60,6 +68,7 @@ foreach my $YYYY (sort @YEARS) {
        		 			if ($fromyear <= $YYYY && $YYYY <= $toyear) {
        		     				push (@{$nav->{$topic}->{$cat1}->{$cat2}->{$cat3}}, [$item, $link, $item]);
        					}
+				    }
 				}
 			}
 		}
@@ -92,8 +101,14 @@ foreach my $YYYY (sort @YEARS) {
 		elsif ($DOCID =~ /^NM/) { $type = "NewCarFeatures"; }
 		elsif ($DOCID =~ /^BM/) { $type = "BodyRepair"; }
 		elsif ($DOCID =~ /^EM/) { $type = "ElectricalWiringDiagram"; }
-		print "* Creating $PDFDIR/$type-$DOCID-$section-$YYYY.pdf\n";
-		`gs -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dNOPAUSE -dBATCH -sOutputFile="$PDFDIR"/$type-$DOCID-$section-$YYYY.pdf $list`;
+		my $outfile;
+		if ($YYYY eq "NONE") {
+			$outfile = "$type-$DOCID-$section.pdf";
+		} else {
+			$outfile = "$type-$DOCID-$section-$YYYY.pdf";
+		}
+		print "* Creating $PDFDIR/$outfile\n";
+		`gs -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dNOPAUSE -dBATCH -sOutputFile="$PDFDIR"/$outfile $list`;
 	}
 }
 

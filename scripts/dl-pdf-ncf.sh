@@ -28,7 +28,7 @@ for DOC in `grep "href=.*xhtml" ${FSM_URLBASE}/t3Portal/external/en/${NM}/toc.xm
 	$WG "${WEBSITE}/${URL}"
 	mv -f ${FSM_URLBASE}/${URL} ${FSM_URLBASE}/${DOC}
 	PDF=`grep PDF ${FSM_URLBASE}/${DOC} |grep -v "link rel"|cut -d\" -f2`
-	$WG "${WEBSITE}/${PDF}?sisuffix=ff&locale=en&siid=1520435234586"
-	mv -f ${FSM_URLBASE}/${PDF}\?sisuffix=ff\&locale=en\&siid=1520435234586 ${FSM_URLBASE}/${PDF}
+	$WG "${WEBSITE}/${PDF}?sisuffix=ff&locale=en&siid=1520435234586&random=0.15244248617681522&pcdChangeBack=null"
+	mv -f ${FSM_URLBASE}/${PDF}\?sisuffix=ff\&locale=en\&siid=1520435234586\&random=0.15244248617681522\&pcdChangeBack=null ${FSM_URLBASE}/${PDF}
 done
 

@@ -48,4 +48,10 @@ print '<head><link rel="stylesheet" href="/framework/bootstrap.min.css"></head>
 foreach my $k (sort(keys %{$h})) {
 	print "<a href='/". $h->{$k} ."'>". $k ."</a><br>\n";
 }
-print '</div></body>';
+print '</div>';
+if (-d "$FSM_URLBASE/PDFs") {
+	print '<div class="nav-link">';
+	print '<br><a href="PDFs/index.html">PDF File Index</a>';
+	print '</div>';
+}
+print '</body>';

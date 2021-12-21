@@ -27,7 +27,8 @@ do
 	cd "${FOLDER}"
 	MODEL=`echo ${FOLDER} | sed -e 's;^PDFs/;;g'`
 	for PDF in `ls -1`; do
-		echo "      <li class='nav-item'><a class='nav-link py-0' href='/${FOLDER}/${PDF}' data-toggle='collapse'><i class="fa fa-fw fa-clock-o"></i>- ${PDF}</a></li>\n";
+		FOLDER_URL=`echo ${FOLDER} | sed -e 's/ /\%20/g;'`
+		echo "      <li class='nav-item'><a class='nav-link py-0' href='/${FOLDER_URL}/${PDF}' data-toggle='collapse' target="new"><i class="fa fa-fw fa-clock-o"></i>- ${PDF}</a></li>\n";
 	done
 	echo "    </ul></div>\n";
 	cd - > /dev/null 2>&1
