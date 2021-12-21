@@ -28,6 +28,9 @@ foreach my $DOC (sort(`find $FSM_URLBASE/t3Portal/external/en/ewdappu -name term
 			$TITLE=~s/<pubtitle>//g;
 			$TITLE=~s/<\/pubtitle>//g;
 			chop($TITLE);
+			$TITLE=~s/TOYOTA/Toyota/g;
+			$TITLE=~s/LEXUS/Lexus/g;
+			$TITLE=~s/SCION/Scion/g;
 			last;
 		}
 	}
