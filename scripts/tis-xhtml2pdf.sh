@@ -17,9 +17,11 @@ COUNT=`ls *.html|wc -l`
 I=0
 for f in `ls *.html | cut -d. -f1`; do
 	I=`expr $I + 1`
-	#cat ${MYURL_BASE}/t3Portal/document/${1}/xhtml/${f}.html | sed -e 's/\.html/.pdf/g' > ${MYURL_BASE}/t3Portal/document/${1}/xhtml/NEW-${f}.html
-	echo "* Converting ${f}.html ($I of $COUNT)";
+	echo "* Converting $PWD/${f}.html ($I of $COUNT)";
 	wkhtmltopdf ${OPTIONS} ${MYURL_BASE}/t3Portal/document/${1}/xhtml/${f}.html ${f}.pdf
-	#rm -f ${MYURL_BASE}/t3Portal/document/${1}/xhtml/NEW-${f}.html
+	if [ $? = 1 ]; then
+		PDF=`cat ${FSM_URLBASE}/t3Portal/document/${1}/xhtml/${f}.html |grep application/pdf|sed -e 's/\.pdf.*$//g'|awk -F\" '{print $NF}'`
+		cp -a "${FSM_URLBASE}/${PDF}.pdf" ${f}.pdf
+	fi
 done
 
