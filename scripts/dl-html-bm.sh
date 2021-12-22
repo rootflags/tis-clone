@@ -12,7 +12,7 @@ if [ x$1 = x ]; then
 fi
 
 i=$1
-FOLDER="/t3Portal/external/en/bm/BM${i}"
+FOLDER="/t3Portal/external/en/cr/BM${i}"
 
 ${SCRIPT_BASE}/dl-html-inc.sh "${FOLDER}"
 
