@@ -1,7 +1,7 @@
 # Simple Abyss webserver setup
 This is one of the easiest and most effective ways to be able to view the documents you downloaded.
 
-1. Download the FSM data
+1. Download the FSM data.  If you create an ISO during the process, you'll need to right click and "mount" the ISO as a disk drive.
 2. Download the Abyss web server from [Aprelium](https://aprelium.com/abyssws/download.php). There are Windows, Mac, and Linux versions so this should work for Mac users too.
 3. Run the installer. When it's done you'll have to set up an administrative name and password to manage the configuration (admin/admin or admin/password is probably fine for this). The installer will then launch your web browser and direct you to log in at http://127.0.0.1:9999/. You'll use the credentials you just created to log in.
 4. Under the "Hosts" section click the "Configure" button
