@@ -19,7 +19,7 @@ for f in `ls *.html | cut -d. -f1`; do
 	I=`expr $I + 1`
 	echo "* Converting $PWD/${f}.html ($I of $COUNT)";
 	wkhtmltopdf ${OPTIONS} ${MYURL_BASE}/t3Portal/document/${1}/xhtml/${f}.html ${f}.pdf
-	if [ $? = 1 ]; then
+	if [ ! -f ${f}.pdf ]; then
 		PDF=`cat ${FSM_URLBASE}/t3Portal/document/${1}/xhtml/${f}.html |grep application/pdf|sed -e 's/\.pdf.*$//g'|awk -F\" '{print $NF}'`
 		cp -a "${FSM_URLBASE}/${PDF}.pdf" ${f}.pdf
 	fi
