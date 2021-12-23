@@ -22,14 +22,13 @@ cd $DOWNLOAD_TO
 FOLDER="t3Portal/document/cr/BM${i}"
 find ${FSM_URLBASE}/${FOLDER} -name "*.pdf" | while read -r FILE
 do
-	echo PROCESSING $FILE
+	echo * PROCESSING $FILE
 	file "$FILE" | grep HTML> /dev/null 2>&1
 	if [ $? = 0 ]; then
 		PDF=`cat $FILE |sed -e 's/\.pdf.*$//g'|awk -F\' '{print $NF}'`
 		$WG -q ${WEBSITE}${PDF}.pdf\?sisuffix=ff\&locale=en\&siid=1640203137875
 		file "${FSM_URLBASE}/${PDF}.pdf?sisuffix=ff&locale=en&siid=1640203137875" | grep PDF
 		if [ $? = 0 ]; then
-			echo MOVING mv -f "${FSM_URLBASE}/${PDF}.pdf?sisuffix=ff&locale=en&siid=1640203137875" "$FILE"
 			rm -f "$FILE"
 			mv -f "${FSM_URLBASE}/${PDF}.pdf?sisuffix=ff&locale=en&siid=1640203137875" "$FILE"
 		fi
