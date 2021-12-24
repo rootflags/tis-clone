@@ -21,6 +21,8 @@ I=0
 if [ ! -e /t3Portal ]; then
 	ln -s ${MYURL_BASE}/t3Portal /t3Portal
 	WKPATH=${MYURL_BASE}
+	# add a sleep because sometimes the above path creation gets cached and the next test fails
+	sleep 1
 fi
 
 # If symlink creation didn't work, then 
