@@ -16,27 +16,27 @@ fi
 COUNT=`ls *.html|wc -l`
 I=0
 
-# wjhtmltopdf will try to use web paths.  If the root web path does not match our root path, 
-# create a temporary symlink so that wkhtmltopdf works.
-if [ ! -e /t3Portal ]; then
-	ln -s ${MYURL_BASE}/t3Portal /t3Portal
-	WKPATH=${MYURL_BASE}
-	# add a sleep because sometimes the above path creation gets cached and the next test fails
-	sleep 1
-fi
 
-# If symlink creation didn't work, then 
-if [ ! -e /t3Portal ]; then
-	curl -Is ${MYURL}/t3Portal/staticcontent/js/t3StaticContentCommon.js|grep "200 OK" >/dev/null 2>&1
+# wjhtmltopdf will try to use web paths.  If the root web path does not match our root path, 
+# create iff temporary symlink so that wkhtmltopdf works.
+if [ -e /t3Portal ]; then
+	WKPATH=${MYURL_BASE}
+else
+	ln -s ${MYURL_BASE}/t3Portal /t3Portal
 	if [ $? = 0 ]; then
-		WKPATH=${MYURL}
+		WKPATH=${MYURL_BASE}
+	else
+		# If symlink creation didn't work, then 
+		curl -Is ${MYURL}/t3Portal/staticcontent/js/t3StaticContentCommon.js|grep "200 OK" >/dev/null 2>&1
+		if [ $? = 0 ]; then
+			WKPATH=${MYURL}
+		else 
+			echo "Cannot create /t3Portal or access ${MYURL}.  Images will not generate.  Exiting"
+			exit
+		fi
 	fi
 fi
 
-if [ x${WKPATH} = x ]; then
-	echo "Cannot create /t3Portal or access ${MYURL}.  Images will not generate.  Exiting"
-	exit
-fi
 
 echo Using $WKPATH
 for f in `ls *.html | cut -d. -f1`; do
@@ -52,4 +52,5 @@ for f in `ls *.html | cut -d. -f1`; do
 	fi
 done
 
-rm -f /t3Portal
+# Don't remove the symlink as doing so will cause problems if you are trying to run multiple tis-xhtml2pdf in parallel
+#rm -f /t3Portal
