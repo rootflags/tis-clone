@@ -37,8 +37,7 @@ foreach my $yearhash (@{$toc->{"termdata"}[0]->{"yeardata"}}){
 	push(@YEARS, $yearhash->{"model-year"});
 }
 
-push (@YEARS, "NONE") if ($#YEARS = -1);
-
+push (@YEARS, "NONE") if ($#YEARS < 0);
 
 foreach my $YYYY (sort @YEARS) {
 	foreach my $entry (@{$toc->{"item"}}) {
@@ -53,17 +52,7 @@ foreach my $YYYY (sort @YEARS) {
 				$cat3 = $hash3->{"name"}[0];
 				$cat3 = "Body" if ($cat3 eq "body");
 		
-				if ($YYYY eq "NONE") {
-					my $hash4;
-					if (ref $hash3 eq ref{}) {
-						$hash4 = $hash3;
-					} else {
-						$hash4 = @{$hash3->{"item"}}[0];
-					}
-					$link = $hash4->{"href"};
-					$item = @{$hash4->{"name"}}[0] || $hash4->{"name"};
-       		     			push (@{$nav->{$topic}->{$cat1}->{$cat2}->{$cat3}}, [$item, $link, $item]);
-				} else {
+				if (defined($hash3->{"tocdata"})) {
 				    for (my $POS=0; $POS < $#{$hash3->{"tocdata"}}; $POS++) {
 					my $hash4 = @{$hash3->{"item"}}[$POS];
 			    		my $fromyear = $hash3->{"tocdata"}[$POS]->{"fromyear"};
@@ -75,6 +64,13 @@ foreach my $YYYY (sort @YEARS) {
        		     				push (@{$nav->{$topic}->{$cat1}->{$cat2}->{$cat3}}, [$item, $link, $item]);
        					}
 				    }
+				} else {
+					my $hash4 = @{$hash3->{"item"}}[0];
+					if (!defined($hash4)) { $hash4 = $hash3; }
+					$hash4 = $hash3;
+					$link = $hash4->{"href"};
+					$item = @{$hash4->{"name"}}[0] || $hash4->{"name"};
+       		     			push (@{$nav->{$topic}->{$cat1}->{$cat2}->{$cat3}}, [$item, $link, $item]);
 				}
 			}
 		}

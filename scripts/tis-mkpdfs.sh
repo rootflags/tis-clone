@@ -69,7 +69,7 @@ if [ -d t3Portal/document/rm/RM${GSICCODE}/xhtml ]; then
 	fi
 	echo "Running:" ${SCRIPT_BASE}/toc2pdf -x t3Portal/external/en/rm/RM${GSICCODE}/toc.xml -p "${PDFDIR}/${MODEL}"
 	${SCRIPT_BASE}/toc2pdf -x t3Portal/external/en/rm/RM${GSICCODE}/toc.xml -p "${PDFDIR}/${MODEL}"
-	#rm -f t3Portal/document/rm/RM${GSICCODE}/xhtml/*.pdf
+	rm -f t3Portal/document/rm/RM${GSICCODE}/xhtml/*.pdf
 fi
 
 ###
