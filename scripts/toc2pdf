@@ -65,12 +65,13 @@ foreach my $YYYY (sort @YEARS) {
        					}
 				    }
 				} else {
-					my $hash4 = @{$hash3->{"item"}}[0];
+				    for (my $POS=0; $POS < $#{$hash3->{"item"}}; $POS++) {
+					my $hash4 = @{$hash3->{"item"}}[$POS];
 					if (!defined($hash4)) { $hash4 = $hash3; }
-					$hash4 = $hash3;
 					$link = $hash4->{"href"};
-					$item = @{$hash4->{"name"}}[0] || $hash4->{"name"};
+					$item = @{$hash4->{"name"}}[$POS] || $hash4->{"name"};
        		     			push (@{$nav->{$topic}->{$cat1}->{$cat2}->{$cat3}}, [$item, $link, $item]);
+				    }
 				}
 			}
 		}
