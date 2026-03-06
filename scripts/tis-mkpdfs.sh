@@ -3,7 +3,7 @@
 # Generate consolidated PDFs from HTML files for newer TIS structure
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 GS="gs -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dNOPAUSE -dQUIET -dBATCH"
 
@@ -11,7 +11,7 @@ cd ${FSM_URLBASE}
 
 ls -d t3Portal > /dev/null 2>&1
 if [ $? != 0 ]; then
-	echo "No t3Portal folder found.  Check FSM_URLBASE in /etc/tis-clone.cfg"
+	echo "No t3Portal folder found.  Check FSM_URLBASE in ${HOME}/.tis/tis-clone.cfg"
 	exit 1
 fi
 

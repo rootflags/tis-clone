@@ -14,7 +14,7 @@ my $xml = new XML::Simple;
 my $toc  = $xml->XMLin($ARGV[0], ForceArray => 1) || die "Syntax: $0 toc.xml";
 my $nav;
 
-$ENV{'TMPDIR'}="/tmp";
+$ENV{'TISTMPDIR'}="/tmp";
 my $BASEDIR = getcwd;
 
 my $topic = $toc->{"name"}[0] || @{$toc->{"pubtitle"}}[0];

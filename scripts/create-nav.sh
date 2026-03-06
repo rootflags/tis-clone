@@ -5,7 +5,7 @@
 # NOTE: This is generally not used anymore
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 JSP=/t3Portal/resources/jsp
 

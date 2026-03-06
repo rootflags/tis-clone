@@ -3,7 +3,7 @@
 # Download all of the website framework
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 # Set up local website framework CSS
 cp -a ${BASE}/website-framework/* ${FSM_URLBASE}/

@@ -4,9 +4,9 @@
 * ```cp tis-clone.cfg /etc/```
 
 2. Account Prep:
-* Get a TIS (techinfo.toyota.com) account, log in via Firefox or Chrome, then view your cookies.  You can do this on any computer you choose - it does not need to be the same one you'll be using to download
-* Edit /tis-clone/cookies.txt and update anything different.  Note that for non-session cookies you'll need to convert the current date plus a few days to the unix epoch date, then update those cookie fields
-* Leave your web browser open in the background while downloading so your sessions cookies stay valid
+* Get a TIS (techinfo.toyota.com) account and an active subscription for at least 2 days
+* Run ```/tis-clone/scripts/tis-login.sh``` and enter your username and password and which 2FA method you want to use (phone or email)
+* Enter the 2FA code and then verify your $HOME/.cookies.txt was updated as expected
 
 3. Download Prep:
 * Search for the vehicle you want (i.e. 2018 Toyota Land Cruiser)

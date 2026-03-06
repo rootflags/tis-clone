@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 cd ${FSM_URLBASE}
 mkisofs -o ${DOWNLOAD_TO}/TheCompleteTLCFSM.iso \

@@ -3,7 +3,7 @@
 # This script will show you any files that failed to download correctly due to the session cookie expiring 
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 if [ x$1 = x ]; then
 	cd ${FSM_URLBASE}

@@ -3,7 +3,7 @@
 # Create index.html for PDFs
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 echo '<!DOCTYPE html><html><head><title>PDF Files</title>
     <meta charset="utf-8">

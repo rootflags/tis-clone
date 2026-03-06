@@ -3,7 +3,7 @@
 # Download any type of PDF section.  You shouldn't normally need this script
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [type]/[GSIC_CODE]"
