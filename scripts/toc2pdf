@@ -22,7 +22,7 @@ exit "Syntax: $0 toc.xml /path/to/PDF/folder/" if (!$PDFDIR);
 my $toc  = $xml->XMLin($tocfile, ForceArray => 1) || die "Syntax: $0 toc.xml /path/to/PDF/folder";
 my $nav;
 
-$ENV{'TMPDIR'}="/tmp";
+$ENV{'TISTMPDIR'}="/tmp";
 my $BASEDIR = getcwd;
 
 my $topic = $toc->{"name"}[0];

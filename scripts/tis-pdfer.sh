@@ -7,7 +7,7 @@
 #    in /t3Portal
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 OPTIONS="--keep-relative-links"
 
@@ -22,9 +22,9 @@ for folder in `find t3Portal/document/ -name xhtml -type d`; do
 	# Get all HTML files, convert links to PDF targets, then crreate PDF files
 	for ffull in `ls $folder/*.html | cut -d. -f1`; do
 		fshort=`echo $ffull|awk -F/ '{print $NF}'`
-		cat ${ffull}.html | sed -e 's/\.html/.pdf/g' > ${TMPDIR}/${fshort}.html
-		wkhtmltopdf ${OPTIONS} ${TMPDIR}/${fshort}.html $pdfdir/${fshort}.pdf
-		rm -f ${TMPDIR}/${fshort}.html
+		cat ${ffull}.html | sed -e 's/\.html/.pdf/g' > ${TISTMPDIR}/${fshort}.html
+		wkhtmltopdf ${OPTIONS} ${TISTMPDIR}/${fshort}.html $pdfdir/${fshort}.pdf
+		rm -f ${TISTMPDIR}/${fshort}.html
 	done 
 done
 

@@ -3,7 +3,7 @@
 # Download Collision Repair Manual PDFs.  Typically only used with older vehicles (1990~2000)
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [GSIC_CODE]"

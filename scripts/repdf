@@ -3,7 +3,7 @@
 # Split and re-merge PDF files.  
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [PDF files]"

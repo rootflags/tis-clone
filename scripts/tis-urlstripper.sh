@@ -3,7 +3,7 @@
 # Remove external URLs from the FSM docs so that you don't get broken references
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 FOLDER=$1
 if [ x${FOLDER} = x ]; then

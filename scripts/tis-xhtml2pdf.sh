@@ -3,7 +3,7 @@
 # Convert XHTML files to PDFs
 #
 
-. /etc/tis-clone.cfg
+. ${HOME}/.tis/tis-clone.cfg
 
 OPTIONS="--keep-relative-links -q"
 
