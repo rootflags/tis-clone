@@ -1,7 +1,6 @@
 # How to Use the Scripts
-1. Install this software into /tis-clone.  If you put it somewhere else, modify $BASE in tis-clone.cfg with the location
-* ```mkdir -p /tis-clone && cp -a tis-clone/* /tis-clone/```
-* ```cp tis-clone.cfg /etc/```
+1. Checkout this software into $HOME/tis-clone.  If you put it somewhere else, modify $BASE in tis-clone.cfg with the location
+* Run ```./setup.sh```
 
 2. Account Prep:
 * Get a TIS (techinfo.toyota.com) account and an active subscription for at least 2 days
