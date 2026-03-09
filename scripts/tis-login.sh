@@ -23,9 +23,21 @@
 OPENAM_AUTH_URL="https://ep.fram.idm.toyota.com/openam/json/realms/root/realms/dealerdaily/authenticate?authIndexType=service&authIndexValue=Techinfo"
 TIS_PORTAL_URL="$WEBSITE/t3Portal/login"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TMP_COOKIE="$TISTMPDIR/cookies.txt"
+COOKIE_FILE=$COOKIES
+#COOKIE_FILE="$HOME/.cookies.txt"
+export TMP_DIR
+TMP_DIR=$(mktemp -d /tmp/tis-login.XXXXXX)
+TMP_COOKIE="$TMP_DIR/cookies.txt"
+
+[ -d "$TMP_DIR" ] || { echo "ERROR: Failed to create temp directory"; exit 1; }
 
 USER_AGENT="Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"
+
+cleanup() {
+    rm -rf "$TMP_DIR"
+    #echo "See $TMP_DIR"
+}
+trap cleanup EXIT
 
 # ---------------------------------------------------------------------------
 # Helper: die with a message
@@ -41,7 +53,7 @@ die() {
 # ---------------------------------------------------------------------------
 
 openam_post() {
-    local payload="$1"
+    local infile="$1"   # file containing JSON payload (use /dev/null for empty POST)
     local outfile="$2"
     curl -s \
         -X POST "$OPENAM_AUTH_URL" \
@@ -49,7 +61,7 @@ openam_post() {
         -H "Accept-API-Version: resource=2.1" \
         -H "User-Agent: $USER_AGENT" \
         -c "$TMP_COOKIE" -b "$TMP_COOKIE" \
-        -d "$payload" \
+        --data-binary "@$infile" \
         -o "$outfile"
 }
 
@@ -87,7 +99,8 @@ fi
 
 echo "[1/5] Requesting authentication challenge..."
 
-openam_post '{}' "$TMP_DIR/challenge.json"
+echo '{}' > "$TMP_DIR/empty.json"
+openam_post "$TMP_DIR/empty.json" "$TMP_DIR/challenge.json"
 
 python3 - << 'PYEOF' || die "Unexpected response from OpenAM. See $TMP_DIR/challenge.json"
 import json, os, sys
@@ -121,7 +134,7 @@ for cb in data['callbacks']:
 print(json.dumps(data))
 PYEOF
 
-openam_post "$(cat "$TMP_DIR/cred_payload.json")" "$TMP_DIR/mfa_response.json"
+openam_post "$TMP_DIR/cred_payload.json" "$TMP_DIR/mfa_response.json"
 
 # ---------------------------------------------------------------------------
 # Step 3: Handle MFA ChoiceCallback
@@ -163,7 +176,7 @@ data['callbacks'][0]['input'][0]['value'] = int(os.environ['MFA_CHOICE'])
 print(json.dumps(data))
 PYEOF
 
-    openam_post "$(cat "$TMP_DIR/choice_payload.json")" "$TMP_DIR/otp_challenge.json"
+    openam_post "$TMP_DIR/choice_payload.json" "$TMP_DIR/otp_challenge.json"
     echo "    Verification code sent."
 
 else
@@ -201,7 +214,7 @@ data['callbacks'][0]['input'][0]['value'] = os.environ['OTP_CODE']
 print(json.dumps(data))
 PYEOF
 
-    openam_post "$(cat "$TMP_DIR/otp_payload.json")" "$TMP_DIR/token_response.json"
+    openam_post "$TMP_DIR/otp_payload.json" "$TMP_DIR/token_response.json"
 
 else
     cp "$TMP_DIR/otp_challenge.json" "$TMP_DIR/token_response.json"
@@ -230,12 +243,16 @@ fi
 
 echo "    Token obtained: ${TOKEN_ID:0:24}... (truncated)"
 
+# Write the OpenAM token into the cookie jar so curl sends it properly
+# Netscape cookie format: domain  flag  path  secure  expiry  name  value
+printf "ep.fram.idm.toyota.com\tTRUE\t/\tTRUE\t2147483647\tiPlanetDirectoryPro\t%s\n" "$TOKEN_ID" >> "$TMP_COOKIE"
+printf "techinfo.toyota.com\tTRUE\t/\tTRUE\t2147483647\tiPlanetDirectoryPro\t%s\n" "$TOKEN_ID" >> "$TMP_COOKIE"
+
 # Use the OpenAM token to get TIS portal session cookies
 curl -s -o "$TMP_DIR/portal.html" -w "%{http_code}\n" \
     -L \
     -A "$USER_AGENT" \
-    -c "$TMP_COOKIE" \
-    -b "$TMP_COOKIE;iPlanetDirectoryPro=$TOKEN_ID" \
+    -c "$TMP_COOKIE" -b "$TMP_COOKIE" \
     -H "Referer: https://techinfo.toyota.com/" \
     "$TIS_PORTAL_URL" > "$TMP_DIR/http_status.txt"
 
@@ -245,22 +262,22 @@ HTTP_STATUS=$(cat "$TMP_DIR/http_status.txt")
 echo "    Cookies collected:"
 grep -v '^#' "$TMP_COOKIE" | awk '{print "      " $6}' || echo "      (none)"
 
-SESSION_COOKIE=$(grep -i "TISESSIONID" "$TMP_COOKIE" 2>/dev/null || true)
+SESSION_COOKIE=$(grep -i "T3SESSIONID" "$TMP_COOKIE" 2>/dev/null || true)
 SIGNOUT_LINK=$(grep -i "tessSignoff\|logout\|signout" "$TMP_DIR/portal.html" 2>/dev/null || true)
 
 if [ -n "$SESSION_COOKIE" ] && [ -n "$SIGNOUT_LINK" ]; then
-    cp "$TMP_COOKIE" "$COOKIES"
+    cp "$TMP_COOKIE" "$COOKIE_FILE"
     echo ""
-    echo "Login successful! Cookies saved to: $COOKIES"
+    echo "Login successful! Cookies saved to: $COOKIE_FILE"
 elif [ -n "$SESSION_COOKIE" ]; then
-    cp "$TMP_COOKIE" "$COOKIES"
+    cp "$TMP_COOKIE" "$COOKIE_FILE"
     echo ""
     echo "WARNING: Session cookie set but sign-out link not detected in page."
-    echo "         Cookies saved to: $COOKIES"
+    echo "         Cookies saved to: $COOKIE_FILE"
     echo "         If downloads fail, check credentials and try again."
 else
     echo ""
-    echo "ERROR: No TISESSIONID cookie received. HTTP status: $HTTP_STATUS"
+    echo "ERROR: No T3SESSIONID cookie received. HTTP status: $HTTP_STATUS"
     echo "       Portal page snippet:"
     head -20 "$TMP_DIR/portal.html" | sed 's/^/         /'
     exit 1
