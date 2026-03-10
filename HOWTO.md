@@ -42,12 +42,18 @@ If the identifiers are different per section just run the relevant ones.  This c
 
 * For PDF docs: ```~/tis-clone/scripts/build-pdfidx.sh > /working/tis/techinfo.toyota.com/PDFs/index.html```
 
-9. If you have an existing version that you're updating or adding additional vehicles to, merge into existing site: ```~/tis-clone/scripts/tis-merge.sh```
+9. If you have an existing version that you're updating or adding additional vehicles to, merge into existing site: ```~/tis-clone/scripts/tis-merge.sh```.  While it's not strictly necessary to copy and merge documents into a different final location than the $DOWNLOAD_TO folder, it is highly recommeneded to do so especially if you have multiple FSMs as it will allow you to update docs in the background rather than having updates (which can include failures) overwriting your live website.
 
 # How to use what you just downloaded
 While you can locally browse the "HTML" files you download using your web browser, typical browser security prevents the Javascript used in the website from reading local files off your PC.  Normally that security restriction is a good thing, but in this case it makes displaying the website a challenge as many of the pages will display but the links won't work, or only part of the page will display.
 
 The best way around this problem is to set up a local webserver.  One you have your documents running in the webserver, you can just point your preferred web browser at the location and browse the docs just like you're on the TIS website.  
-* If you're doing this on a Linux server you could use Apache.  You may need to add "jsp" to the "application/javascript" line in /etc/mime.types, depending on your installation.
+* The easist way on a Linux desktop is to run the following, and then point your web browser to http://localhost:8080
+
+         . ~/.tis/tis-clone.conf
+         cd $DOWNLOAD_TO
+         python3 -m http.server 8080
+  
+* Alternately if you're doing this on a Linux server you could use Apache.  You may need to add "jsp" to the "application/javascript" line in /etc/mime.types, depending on your installation.
 * If you want to run this locally on a Windows or MacOS desktop, then my preferred method is to set up the Abyss webserver.  Instructions for this are available in the [Abyss webserver setup doc](tis-clone/ABYSS.md)
 * nginx and other webservers will probably work as well.  Just make sure you can associate JSP files as txt/html if the pages don't display correctly as the index.jsp file needs to do some dynamic data loading of XHTML and other file types to create the HTML pages you see.
