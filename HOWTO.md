@@ -1,21 +1,24 @@
 # How to Use the Scripts
 1. Checkout this software into $HOME/tis-clone.  If you put it somewhere else, modify $BASE in tis-clone.cfg with the location
-   ```git clone https://github.com/rootflags/tis-clone ~/tis-clone```
+   
+      ```git clone https://github.com/rootflags/tis-clone ~/tis-clone```
+   
 2. Run the setup script which will create the necessary folder structure
-   ```cd ~/tis-clone && ./setup.sh```
+ 
+      ```cd ~/tis-clone && ./setup.sh```
 
 2. Account Prep:
-* Get a TIS (techinfo.toyota.com) account and an active subscription for at least 2 days
+* Visit TIS (https://techinfo.toyota.com), create an account, and follow the instructions to create an active subscription.  Typically a 2 day subscription will be enough
 * Run ```~/tis-clone/scripts/tis-login.sh``` and enter your username and password and which 2FA method you want to use (phone or email)
 * Enter the 2FA code and then verify your $HOME/.tis/cookies.txt was updated as expected
 
 3. Download Prep:
-* Search for the vehicle you want (i.e. 2018 Toyota Land Cruiser)
-* Determine the Repair Manual (RM), Wiring Diagram (EM or EWD), Body Repair (BM or CR), and New Car Feature (NM or NCF) identifier.  In this case it's "27J0U" since the folders in the URL have "rm/RM27J0U" or "ewd/EM27J0U"
+* In the TIS website, search for the vehicle you want (i.e. 2018 Toyota Land Cruiser)
+* Determine the Repair Manual (RM), Wiring Diagram (EM or EWD), Body Repair (BM or CR), and New Car Feature (NM or NCF) 5-character identifier.  In this case it's "27J0U" since the folders in the URL have "rm/RM27J0U" or "ewd/EM27J0U"
 
 4. Downloading:
-* Create a new working directory (i.e. mkdir /working/tis).  If you create a different location you'll need to modify tis-clone.cfg
-* cd into that folder and run all of the downloader scripts using the identifier above:
+* By default the setup.sh script will create the download folder based on the $DOWNLOAD_TO variable in tis-clone.cfg.  If you create a different location you'll need to modify ~/.tis/tis-clone.cfg
+* cd into the download folder and run all of the downloader scripts using the identifier above:
 
          . ~/.tis/tis-clone.conf
          cd $DOWNLOAD_TO
