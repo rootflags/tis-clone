@@ -1,6 +1,8 @@
 # How to Use the Scripts
 1. Checkout this software into $HOME/tis-clone.  If you put it somewhere else, modify $BASE in tis-clone.cfg with the location
-* Run ```cd ~/tis-clone && ./setup.sh```
+   ```git clone https://github.com/rootflags/tis-clone ~/tis-clone```
+2. Run the setup script which will create the necessary folder structure
+   ```cd ~/tis-clone && ./setup.sh```
 
 2. Account Prep:
 * Get a TIS (techinfo.toyota.com) account and an active subscription for at least 2 days
