@@ -38,9 +38,9 @@ If the identifiers are different per section just run the relevant ones.  This c
 * ```~/tis-clone/scripts/tis-mkpdfs.sh $IDENTIFIER```
 
 8. Create Navigation:
-* For HTML docs: ```~/tis-clone/scripts/build-index.pl > /working/tis/techinfo.toyota.com/index.html```
+* For HTML docs: ```~/tis-clone/scripts/build-index.pl > $DOWNLOAD_TO/techinfo.toyota.com/index.html```
 
-* For PDF docs: ```~/tis-clone/scripts/build-pdfidx.sh > /working/tis/techinfo.toyota.com/PDFs/index.html```
+* For PDF docs: ```~/tis-clone/scripts/build-pdfidx.sh > $DOWNLOAD_TO/techinfo.toyota.com/PDFs/index.html```
 
 9. If you have an existing version that you're updating or adding additional vehicles to, merge into existing site: ```~/tis-clone/scripts/tis-merge.sh```.  While it's not strictly necessary to copy and merge documents into a different final location than the $DOWNLOAD_TO folder, it is highly recommeneded to do so especially if you have multiple FSMs as it will allow you to update docs in the background rather than having updates (which can include failures) overwriting your live website.
 
