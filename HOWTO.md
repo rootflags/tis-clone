@@ -1,11 +1,11 @@
 # How to Use the Scripts
 1. Checkout this software into $HOME/tis-clone.  If you put it somewhere else, modify $BASE in tis-clone.cfg with the location
-* Run ```./setup.sh```
+* Run ```cd ~/tis-clone && ./setup.sh```
 
 2. Account Prep:
 * Get a TIS (techinfo.toyota.com) account and an active subscription for at least 2 days
-* Run ```/tis-clone/scripts/tis-login.sh``` and enter your username and password and which 2FA method you want to use (phone or email)
-* Enter the 2FA code and then verify your $HOME/.cookies.txt was updated as expected
+* Run ```~/tis-clone/scripts/tis-login.sh``` and enter your username and password and which 2FA method you want to use (phone or email)
+* Enter the 2FA code and then verify your $HOME/.tis/cookies.txt was updated as expected
 
 3. Download Prep:
 * Search for the vehicle you want (i.e. 2018 Toyota Land Cruiser)
@@ -15,28 +15,29 @@
 * Create a new working directory (i.e. mkdir /working/tis).  If you create a different location you'll need to modify tis-clone.cfg
 * cd into that folder and run all of the downloader scripts using the identifier above:
 
-         cd /working/tis
-         for SCRIPT in `ls /tis-clone/scripts/dl-*`; do 
+         . ~/.tis/tis-clone.conf
+         cd $DOWNLOAD_TO
+         for SCRIPT in `ls ~/tis-clone/scripts/dl-*`; do 
                  $SCRIPT $IDENTIFIER
          done
 
 If the identifiers are different per section just run the relevant ones.  This can happen when multiple model years share some but not all docs
 
 5. Download the website framework
-* ```/tis-clone/scripts/dl-framework.sh```
+* ```~/tis-clone/scripts/dl-framework.sh```
 
 6. Clean up a ton of unneeded links and external website references that won't work locally:
-* Run ```/tis-clone/scripts/tis-urlstripper.sh``` to remove external URLs and remove various garbage that gets created
+* Run ```~/tis-clone/scripts/tis-urlstripper.sh``` to remove external URLs and remove various garbage that gets created
 
 7. Create PDFs, if you want them:
-* ```/tis-clone/scripts/tis-mkpdfs.sh $IDENTIFIER```
+* ```~/tis-clone/scripts/tis-mkpdfs.sh $IDENTIFIER```
 
 8. Create Navigation:
-* For HTML docs: ```/tis-clone/scripts/build-index.pl > /working/tis/techinfo.toyota.com/index.html```
+* For HTML docs: ```~/tis-clone/scripts/build-index.pl > /working/tis/techinfo.toyota.com/index.html```
 
-* For PDF docs: ```/tis-clone/scripts/build-pdfidx.sh > /working/tis/techinfo.toyota.com/PDFs/index.html```
+* For PDF docs: ```~/tis-clone/scripts/build-pdfidx.sh > /working/tis/techinfo.toyota.com/PDFs/index.html```
 
-9. If you have an existing version that you're updating or adding additional vehicles to, merge into existing site: ```/tis-clone/scripts/tis-merge.sh```
+9. If you have an existing version that you're updating or adding additional vehicles to, merge into existing site: ```~/tis-clone/scripts/tis-merge.sh```
 
 # How to use what you just downloaded
 While you can locally browse the "HTML" files you download using your web browser, typical browser security prevents the Javascript used in the website from reading local files off your PC.  Normally that security restriction is a good thing, but in this case it makes displaying the website a challenge as many of the pages will display but the links won't work, or only part of the page will display.
