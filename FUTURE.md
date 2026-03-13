@@ -16,3 +16,18 @@ Not all features have been implemented for download.  This is a running list of 
 
 * Toyota Technical Training Guide downloads are generic, not for a specific vehicle, but might be desirable.
 
+# Known Bugs or Desirable Changes
+Most of the tools generate a lot of output.  That output often is not captured or error checked.
+* All output should be logged
+* All output should be reviewed for errors.  Ideally we'd have a tool which provides a failure report and also a way to re-run against failed pages.
+* Output to the terminal should be limited to "URL [RESULT]" instead of the full wget (or other tool) output
+
+There are a lot of steps in the [HOWTO.md](HOWTO.md) file.
+* Setup should also test for dependencies and try to remediate/install or at least warn the user they have work to do before getting started.
+* The first few steps to log in and make any config changes should be guided
+* Everything else should really be a single command that runs all the download tasks and then runs all the website and PDF creation tasks
+* It would be better if we could just prompt the user with the vehicle division/model/year like the website does and handle EVERYTHING based on that input
+
+Overall better error handling would be helpful
+* We now test for whether we're correctly logged in, though that could be better, however...
+* We don't test if we got logged out along the way so it's possible for the first few pages to succeed but then a whole bunch fail to download correctly
