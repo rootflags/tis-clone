@@ -20,7 +20,7 @@ A recent version of Perl 5 is required.  You will need the following modules:
 
 Other Ubuntu packages which need to be installed:
 * Ghostscript (if you want to create PDFs: apt install ghostscript)
-* Poppler (pdfinfo, pdfseparate) and pdftk-java (if you want to split the multi-thousand page PDFs into smaller PDFs which are more manageable).  "apt install poppler-utils pkftk-java".
+* Poppler (pdfinfo, pdfseparate) and pdftk-java (if you want to split the multi-thousand page PDFs into smaller PDFs which are more manageable).  "apt install poppler-utils pdftk-java".
 * rsync (if you have an existing download and are updating the documents)
 * wkhtmltopdf (required if you want to create PDFs)
 

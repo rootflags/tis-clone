@@ -14,6 +14,33 @@ else
 	. ./$FOLDER/tis-clone.cfg
 fi
 
+echo "Checking dependencies..."
+# Confirm we have all the basic packages required
+for cmd in cat cp cut diff find grep head ls mkdir mv rm rmdir sed sort wget gs pdfinfo pdfseparate pdftk rsync wkhtmltopdf; do
+	which $cmd > /dev/null 2>&1
+	if [ $? != 0 ]; then
+		echo "** $cmd not found"
+		exit 1
+	fi
+done
+
+# Check for SSL support in wget
+ldd `which wget`|grep libssl > /dev/null 2>&1
+if [ $? != 0 ]; then
+	echo "** wget missing SSL support"
+	exit 1
+fi
+
+# Check for necessary perl modules
+for module in Cwd Data::Dumper Getopt::Long List::MoreUtils Switch XML::Simple; do
+	perl -e "use $module;" > /dev/null 2>&1
+	if [ $? != 0 ]; then
+		echo "** Perl module $module not found"
+		exit 1
+	fi
+done
+
+
 echo "Creating folders..."
 mkdir -p $TISTMPDIR
 mkdir -p $DOWNLOAD_TO
