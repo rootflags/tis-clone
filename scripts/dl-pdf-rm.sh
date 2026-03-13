@@ -3,8 +3,8 @@
 # Download Repair Manual PDFs.  Typically only used with older vehicles (1990~2000)
 #
 
-
 . ${HOME}/.tis/tis-clone.cfg
+${SCRIPT_BASE}/confirm-login.sh
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [GSIC_CODE]"

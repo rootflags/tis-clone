@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Download Body Repair Manual PDFs.  Typically only used with older vehicles (1990~2000)
+# Download Collision Repair Manual PDFs.  Typically only used with older vehicles (1990~2000)
 #
 
 . ${HOME}/.tis/tis-clone.cfg
@@ -13,7 +13,7 @@ if [ x$1 = x ]; then
 fi
 
 i=$1
-BR=BR${i}
+BR=BM${i}
 
 ##
 ## Get Repair Manual 
