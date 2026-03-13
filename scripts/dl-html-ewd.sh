@@ -4,6 +4,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
+${SCRIPT_BASE}/confirm-login.sh
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [GSIC_CODE]"
@@ -47,6 +48,7 @@ for i in `seq 1 9`; do
 done
 
 for IMG in `grep img.*src ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/ewd/intro/*|sed -e 's/^.*img.*src=//g'|cut -d\" -f2`; do
+	echo "Checking $IMG in ($EM)"
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/${IMG}
 done
 

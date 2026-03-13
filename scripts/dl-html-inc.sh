@@ -4,6 +4,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
+${SCRIPT_BASE}/confirm-login.sh
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [WEBSITE URI PATH]"

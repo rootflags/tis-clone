@@ -7,11 +7,6 @@
 
 OPTIONS="--keep-relative-links -q"
 
-if [ x$1 = x ]; then
-	echo "Syntax: $0 rm/RM08F0U"
-	exit
-fi
-
 # Must be run from the xhtml folder!
 COUNT=`ls *.html|wc -l`
 I=0
@@ -42,12 +37,12 @@ echo Using $WKPATH
 for f in `ls *.html | cut -d. -f1`; do
 	I=`expr $I + 1`
 	echo "* Converting $PWD/${f}.html ($I of $COUNT)";
-	wkhtmltopdf ${OPTIONS} ${MYURL_BASE}/t3Portal/document/${1}/xhtml/${f}.html ${f}.pdf
-	if [ ! -f ${f}.pdf ]; then
-		PDF=`cat ${FSM_URLBASE}/t3Portal/document/${1}/xhtml/${f}.html |grep application/pdf|sed -e 's/\.pdf.*$//g'|awk -F\" '{print $NF}'`
+	wkhtmltopdf ${OPTIONS} $PWD/${f}.html $PWD/${f}.pdf
+	if [ ! -f $PWD/${f}.pdf ]; then
+		PDF=`cat $PWD/${f}.html |grep application/pdf|sed -e 's/\.pdf.*$//g'|awk -F\" '{print $NF}'`
 		if [ -f  "${FSM_URLBASE}/${PDF}.pdf" ]; then
 			echo "  - Conversion failed, using ${FSM_URLBASE}/${PDF}.pdf" 
-			cp -a "${FSM_URLBASE}/${PDF}.pdf" ${f}.pdf
+			cp -a "${FSM_URLBASE}/${PDF}.pdf" $PWD/${f}.pdf
 		fi
 	fi
 done
