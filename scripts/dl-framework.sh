@@ -78,6 +78,11 @@ do
 	mv "$WEBFILE" "$NEW"
 done
 
+# Actual website is missing this image, so let's include it to make the results better
+if [ ! -f ${FSM_URLBASE}/t3Portal/stylegraphics/ ]; then
+	cp ${FSM_URLBASE}/t3Portal/resources/jsp/images/clear.gif ${FSM_URLBASE}/t3Portal/stylegraphics/
+fi
+
 # Strip out external URL calls
 FOLDER="${FSM_URLBASE}/t3Portal/resources/jsp/siviewer"
 FILES=`find ${FOLDER} -type f|egrep '\.(xml|htm|html|xsl|js|css|jsp)'|cut -d: -f1|sort -u`
