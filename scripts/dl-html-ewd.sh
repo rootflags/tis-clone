@@ -8,26 +8,32 @@ ${SCRIPT_BASE}/confirm-login.sh
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [GSIC_CODE]"
-	echo "    ie: $0 EM27J0U"
+	echo "    ie: $0 27J0U"
 	exit
 fi
-
-case "$1" in
-	EM*)
-		EM=${1};;
-	*)
-		EM=EWD${1};;
-esac
-
 
 ##
 ## Get Wiring Diagrams
 ##
+
+# Try ##### first 
+EM=$1
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml
 if [ ! -f ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml ]; then
-	echo "termdata.xml did not download.  Are you sure ${EM} is valid?  Exiting."
-	exit
+	# If that failed, try EM#####
+	EM=EM${1}
+	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml
+	if [ ! -f ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml ]; then
+		# If that failed, try the legacy EWD#####
+		EM=EWD${1}
+		if [ ! -f ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml ]; then
+			# If it still fails, give up
+			echo "termdata.xml did not download.  Are you sure ${EM} is valid?  Exiting."
+			exit
+		fi
+	fi
 fi
+
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/ewd_index.html
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/print.html
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/intro/intro.html
