@@ -43,6 +43,12 @@ $WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/defs/sc.xml
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/defs/area.xml
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/styles/loads/ps_cap.xsl
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/styles/connector/partsRefsHtml.xsl
+$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/intro/srs_caution.html
+
+# Download the guide.html file and then find the images because wget breaks the link path
+for png in `$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/intro/guide.html 2>&1 | grep "intro/intro" | awk '{print $NF}'|sed -e 's:intro/intro:intro:g'`; do
+	$WG $png
+done
 
 for i in `seq 1 9`; do 
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/EM27J0U/ewd/icon/zoombar_0${i}.png
@@ -55,6 +61,8 @@ done
 
 for YYYYMM in `grep yeardata ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml|sed -e 's/^.*startdate="//g'|sed -e 's/".*$//g'`; do
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/system/text/svglang.xml
+	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/connlist.xml
+	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/styles/connector/termInfo.xsl
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/parts.xml
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/locrefs-${YYYYMM}.xml
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/sysrefs-${YYYYMM}.xml
@@ -80,6 +88,14 @@ done
 for SVG in `grep '<fig' ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/parts.xml |cut -d\> -f2|cut -d\< -f1|sort -u`; do
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/figsvg/${SVG}.svg
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/fig/${SVG}.svgz
+done
+
+for PNG in `grep 'fig=' ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/connlist.xml |sed -e 's/^.*fig="//g'|sed -e 's/".*$//g'|sort -u`; do
+	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/figrepair/${PNG}.png
+done
+
+for VIDEO in `grep 'video=' ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/connlist.xml |sed -e 's/^.*video="//g'|sed -e 's/".*$//g'|sort -u`; do
+	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/connector/video/${VIDEO}.mp4
 done
 
 for SVG in `grep '<fig' ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/relay/title.xml |cut -d\> -f2|cut -d\< -f1|sort -u`; do
