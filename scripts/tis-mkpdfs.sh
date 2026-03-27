@@ -36,8 +36,7 @@ do
 	ORIGDIR=`pwd`
 	echo "* Generating PDFs for ${GSICCODE} in $XHTML"
 	cd $XHTML 
-#	${SCRIPT_BASE}/tis-xhtml2pdf.sh 
-	#${SCRIPT_BASE}/tis-xhtml2pdf.sh cr/BM${GSICCODE}
+	${SCRIPT_BASE}/tis-xhtml2pdf.sh 
 	echo "* Consolidating PDFs for ${GSICCODE} in $XHTML"
 	cd ${ORIGDIR}
 	TOC=`echo $XHTML|sed -e 's/xhtml$/toc.xml/g'|sed -e 's:/document/:/external/en/:g'`
@@ -47,7 +46,7 @@ do
 		mkdir -p "${PDFDIR}/${MODEL}"
 	fi
 	echo "* Converting toc $TOC to pdf in $PDFDIR/$MODEL"
-#	${SCRIPT_BASE}/toc2pdf -x ${TOC} -p "${PDFDIR}/${MODEL}"
+	${SCRIPT_BASE}/toc2pdf -x ${TOC} -p "${PDFDIR}/${MODEL}"
 	rm -f $XHTML/*.pdf
 done
 

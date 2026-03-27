@@ -36,6 +36,7 @@ $WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/lib/domparser.js
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/fig/svgfig.js
 $WG ${WEBSITE}/t3Portal/ewdappu/pdrSelect.html
 $WG ${WEBSITE}/t3Portal/staticcontent/js/t3StaticContentCommon.js
+$WG ${WEBSITE}/t3Portal/portlets/tis/document/myFavorite/addLastVisitedDocs.do
 
 # Download shared navigation images.  
 $WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/empty.gif

@@ -4,7 +4,7 @@ use Data::Dumper;
 
 my $h;
 
-chomp(my $FSM_URLBASE = `. ${HOME}/.tis/tis-clone.cfg; echo \$FSM_URLBASE`);
+chomp(my $FSM_URLBASE = `. $ENV{HOME}/.tis/tis-clone.cfg; echo \$FSM_URLBASE`);
 
 # Generate indexes for all the toc.html files
 foreach my $TOC_HTML (sort(`find $FSM_URLBASE -name toc.html`)) {

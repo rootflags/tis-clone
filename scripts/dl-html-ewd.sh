@@ -8,15 +8,16 @@ ${SCRIPT_BASE}/confirm-login.sh
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [GSIC_CODE]"
-	echo "    ie: $0 27J0U"
+	echo "    ie: $0 EM27J0U"
 	exit
 fi
 
-if [ x$2 = xEM ]; then
-	EM=EM${1}
-else
-	EM=EWD${1}
-fi
+case "$1" in
+	EM*)
+		EM=${1};;
+	*)
+		EM=EWD${1};;
+esac
 
 
 ##
@@ -71,7 +72,7 @@ for YYYYMM in `grep yeardata ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/x
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/tree/${YYYYMM}/tree-routing.xml
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/tree/${YYYYMM}/tree-system.xml
 
-	for XML in `egrep "(book|note) id=.*file=" ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/tree/${YYYYMM}/tree-*.xml |cut -d\" -f2`; do
+	for XML in `egrep "(book|note).*id=" ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/tree/${YYYYMM}/tree-*.xml |sed -e 's/^.*id="//g' | sed -e 's/".*$//g' `; do
 		$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/ewd/contents/tree/${YYYYMM}/tree-${XML}.xml
 	done
 done
