@@ -54,6 +54,10 @@ The best way around this problem is to set up a local webserver.  One you have y
          cd $DOWNLOAD_TO
          python3 -m http.server 8080
   
-* Alternately if you're doing this on a Linux server you could use Apache.  You may need to add "jsp" to the "application/javascript" line in /etc/mime.types, depending on your installation.
+* Alternately if you're doing this on a Linux server you could use Apache.  You may need to add "jsp" to the "application/javascript" line in /etc/mime.types, depending on your installation. and will also need to add svgz decompression support to your virtual host:
+
+        AddType image/svg+xml svg svgz
+        AddEncoding gzip svgz
+  
 * If you want to run this locally on a Windows or MacOS desktop, then my preferred method is to set up the Abyss webserver.  Instructions for this are available in the [Abyss webserver setup doc](tis-clone/ABYSS.md)
 * nginx and other webservers will probably work as well.  Just make sure you can associate JSP files as txt/html if the pages don't display correctly as the index.jsp file needs to do some dynamic data loading of XHTML and other file types to create the HTML pages you see.
