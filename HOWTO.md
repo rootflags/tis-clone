@@ -14,7 +14,7 @@
 
 3. Download Prep:
 * In the TIS website, search for the vehicle you want (i.e. 2018 Toyota Land Cruiser)
-* Determine the Repair Manual (RM), Wiring Diagram (EM or EWD), Body Repair (BM or CR), and New Car Feature (NM or NCF) 5-character identifier.  In this case it's "27J0U" since the folders in the URL have "rm/RM27J0U" or "ewd/EM27J0U"
+* Determine the Repair Manual (RM), Wiring Diagram (EM or EWD), Body Repair (BM or CR), and New Car Feature (NM or NCF) 5-character identifier.  In this case it's "27J0U" since the folders in the URL have "rm/RM27J0U" or "ewd/EM27J0U".  Note that in some cases the identifier might be different depending on the subsection (i.e. 23C0U is used for the RM, EM, and NM sections for a 2013 Prius V, but 18M0U is the code for the BM section).
 
 4. Downloading:
 * By default the setup.sh script will create the download folder based on the $DOWNLOAD_TO variable in tis-clone.cfg.  If you create a different location you'll need to modify ~/.tis/tis-clone.cfg

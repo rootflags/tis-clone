@@ -17,15 +17,15 @@ fi
 ##
 
 # Try ##### first 
-EM=$1
+EM=EM${1}
 $WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml
 if [ ! -f ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml ]; then
 	# If that failed, try EM#####
-	EM=EM${1}
+	EM=EWD${1}
 	$WG ${WEBSITE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml
 	if [ ! -f ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml ]; then
 		# If that failed, try the legacy EWD#####
-		EM=EWD${1}
+		EM=${1}
 		if [ ! -f ${FSM_URLBASE}/t3Portal/external/en/ewdappu/${EM}/xhtml/termdata.xml ]; then
 			# If it still fails, give up
 			echo "termdata.xml did not download.  Are you sure ${EM} is valid?  Exiting."

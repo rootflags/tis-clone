@@ -25,7 +25,7 @@ for cmd in cat cp cut diff find grep head ls mkdir mv rm rmdir sed sort wget gs 
 done
 
 # Check for SSL support in wget
-ldd `which wget`|grep libssl > /dev/null 2>&1
+`which wget` --version|grep ssl > /dev/null 2>&1
 if [ $? != 0 ]; then
 	echo "** wget missing SSL support"
 	exit 1
