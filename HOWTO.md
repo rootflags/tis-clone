@@ -20,7 +20,7 @@
 * By default the setup.sh script will create the download folder based on the $DOWNLOAD_TO variable in tis-clone.cfg.  If you create a different location you'll need to modify ~/.tis/tis-clone.cfg
 * cd into the download folder and run all of the downloader scripts using the identifier above:
 
-         . ~/.tis/tis-clone.conf
+         . ~/.tis/tis-clone.cfg
          cd $DOWNLOAD_TO
          for SCRIPT in `ls ~/tis-clone/scripts/dl-*`; do 
                  $SCRIPT $IDENTIFIER
@@ -50,7 +50,7 @@ While you can locally browse the "HTML" files you download using your web browse
 The best way around this problem is to set up a local webserver.  One you have your documents running in the webserver, you can just point your preferred web browser at the location and browse the docs just like you're on the TIS website.  
 * The easist way on a Linux desktop is to run the following, and then point your web browser to http://localhost:8080
 
-         . ~/.tis/tis-clone.conf
+         . ~/.tis/tis-clone.cfg
          cd $DOWNLOAD_TO
          python3 -m http.server 8080
   
