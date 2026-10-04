@@ -4,7 +4,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
-${SCRIPT_BASE}/confirm-login.sh
+${SCRIPT_BASE}/confirm-login.sh || exit 1
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [GSIC_CODE]"

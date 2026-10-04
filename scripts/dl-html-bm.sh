@@ -4,7 +4,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
-${SCRIPT_BASE}/confirm-login.sh
+${SCRIPT_BASE}/confirm-login.sh || exit 1
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [GSIC_CODE]"
@@ -27,11 +27,11 @@ do
 	file "$FILE" | grep HTML> /dev/null 2>&1
 	if [ $? = 0 ]; then
 		PDF=`cat $FILE |sed -e 's/\.pdf.*$//g'|awk -F\' '{print $NF}'`
-		$WG -q ${WEBSITE}${PDF}.pdf\?sisuffix=ff\&locale=en\&siid=1640203137875
-		file "${FSM_URLBASE}/${PDF}.pdf?sisuffix=ff&locale=en&siid=1640203137875" | grep PDF
+		$WG -q ${WEBSITE}${PDF}.pdf\?sisuffix=ff\&locale=en\&siid=${SIID}
+		file "${FSM_URLBASE}/${PDF}.pdf?sisuffix=ff&locale=en&siid=${SIID}" | grep PDF
 		if [ $? = 0 ]; then
 			rm -f "$FILE"
-			mv -f "${FSM_URLBASE}/${PDF}.pdf?sisuffix=ff&locale=en&siid=1640203137875" "$FILE"
+			mv -f "${FSM_URLBASE}/${PDF}.pdf?sisuffix=ff&locale=en&siid=${SIID}" "$FILE"
 		fi
 	fi
 done

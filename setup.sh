@@ -54,5 +54,7 @@ if [ -f $CONFIG_DIR/tis-clone.cfg ]; then
 	echo "$CONFIG_DIR/tis-clone.cfg already exists, skipping (NOT overwriting)"
 else
 	echo "Creating a default $CONFIG_DIR/tis-clone.cfg file"
-	cp tis-clone.cfg $CONFIG_DIR
+	# Give this install its own siid (see SIID in tis-clone.cfg and issue #11)
+	SIID=1`LC_ALL=C tr -dc 0-9 < /dev/urandom | head -c 12`
+	sed -e "s/^SIID=.*/SIID=${SIID}/" tis-clone.cfg > $CONFIG_DIR/tis-clone.cfg
 fi
