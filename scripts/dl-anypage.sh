@@ -15,7 +15,7 @@ fi
 
 URL=$1
 
-${SCRIPT_BASE}/confirm-login.sh
+${SCRIPT_BASE}/confirm-login.sh || exit 1
 
 ##
 ## Recursively download pages

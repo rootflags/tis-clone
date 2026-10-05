@@ -4,7 +4,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
-${SCRIPT_BASE}/confirm-login.sh
+${SCRIPT_BASE}/confirm-login.sh || exit 1
 
 # Set up local website framework CSS
 cp -a ${BASE}/website-framework/* ${FSM_URLBASE}/
