@@ -11,6 +11,9 @@
 #   ./tis-login.sh -u USERNAME -p PASSWORD (prompts for MFA choice and OTP only)
 #   ./tis-login.sh -m 0                    (pre-select MFA: 0=email, 1=SMS)
 #
+# Defaults can also be set in ~/.tis/tis-clone.cfg with TIS_USERNAME,
+# TIS_PASSWORD and TIS_MFA.  Command line options override them.
+#
 # Requirements: curl, python3
 
 # ---------------------------------------------------------------------------
@@ -72,9 +75,9 @@ touch "$TMP_COOKIE"
 # Argument parsing
 # ---------------------------------------------------------------------------
 
-USERNAME=""
-PASSWORD=""
-MFA_CHOICE=""
+USERNAME="${TIS_USERNAME:-}"
+PASSWORD="${TIS_PASSWORD:-}"
+MFA_CHOICE="${TIS_MFA:-}"
 
 while getopts "u:p:m:" opt; do
     case $opt in
