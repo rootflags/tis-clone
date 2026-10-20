@@ -4,7 +4,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
-${SCRIPT_BASE}/confirm-login.sh || exit 1
+. ${SCRIPT_BASE}/tis-log.sh
 
 if [ x$1 = x ]; then
 	echo "Syntax: $0 [GSIC_CODE]"
@@ -12,23 +12,4 @@ if [ x$1 = x ]; then
 	exit
 fi
 
-i=$1
-RM=RM${i}
-
-##
-## Get Repair Manual 
-##
-
-## TOC
-$WG ${WEBSITE}/t3Portal/external/en/rm/${RM}/toc.xml
-
-## HTML Docs and Images/PDFs
-for DOC in `grep "href=.*xhtml" ${FSM_URLBASE}/t3Portal/external/en/rm/${RM}/toc.xml |cut -d\" -f2`; do
-	URL=`echo ${DOC} | sed -e 's/$/\?sisuffix=ff\&locale=en\&siid='"${SIID}"'/g'`;
-	$WG "${WEBSITE}/${URL}"
-	mv -f ${FSM_URLBASE}/${URL} ${FSM_URLBASE}/${DOC}
-	PDF=`grep PDF ${FSM_URLBASE}/${DOC} |grep -v "link rel"|cut -d\" -f2`
-	$WG "${WEBSITE}/${PDF}?sisuffix=ff&locale=en&siid=${SIID}"
-	mv -f ${FSM_URLBASE}/${PDF}\?sisuffix=ff\&locale=en\&siid=${SIID} ${FSM_URLBASE}/${PDF}
-done
-
+exec ${SCRIPT_BASE}/dl-pdf-any.sh rm/RM${1}

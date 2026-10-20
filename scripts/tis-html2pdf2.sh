@@ -4,6 +4,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
+. ${SCRIPT_BASE}/tis-log.sh
 
 echo "Sample only right now"
 exit

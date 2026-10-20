@@ -22,6 +22,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
+. ${SCRIPT_BASE}/tis-log.sh
 
 OPENAM_AUTH_URL="https://ep.fram.idm.toyota.com/openam/json/realms/root/realms/dealerdaily/authenticate?authIndexType=service&authIndexValue=Techinfo"
 TIS_PORTAL_URL="$WEBSITE/t3Portal/login"
@@ -266,22 +267,40 @@ echo "    Cookies collected:"
 grep -v '^#' "$TMP_COOKIE" | awk '{print "      " $6}' || echo "      (none)"
 
 SESSION_COOKIE=$(grep -i "T3SESSIONID" "$TMP_COOKIE" 2>/dev/null || true)
-SIGNOUT_LINK=$(grep -i "tessSignoff\|logout\|signout" "$TMP_DIR/portal.html" 2>/dev/null || true)
 
-if [ -n "$SESSION_COOKIE" ] && [ -n "$SIGNOUT_LINK" ]; then
+if [ -z "$SESSION_COOKIE" ]; then
+    echo ""
+    echo "ERROR: No T3SESSIONID cookie received. HTTP status: $HTTP_STATUS"
+    [ "$HTTP_STATUS" = "000" ] && echo "       Could not connect to TIS (000).  The portal may be down or overloaded; try again later."
+    if [ -s "$TMP_DIR/portal.html" ]; then
+        echo "       Portal page snippet:"
+        head -20 "$TMP_DIR/portal.html" | sed 's/^/         /'
+    fi
+    exit 1
+fi
+
+# The portal landing page is not a reliable sign of success (TIS sometimes answers it with a 403 even
+# though the session works), so fetch a subscriber-only PDF with the new cookies, as confirm-login.sh
+# does.  Try a few times since the portal can be slow or drop connections.
+TESTPAGE="/t3Portal/staticcontent/en/techinfo/docs/glossary.pdf"
+for TRY in 1 2 3; do
+    curl -s -o "$TMP_DIR/test.pdf" -m 60 -A "$USER_AGENT" -b "$TMP_COOKIE" "$WEBSITE$TESTPAGE"
+    [ "$(head -c 4 "$TMP_DIR/test.pdf" 2>/dev/null)" = "%PDF" ] && break
+    rm -f "$TMP_DIR/test.pdf"
+    [ $TRY = 3 ] || sleep 10
+done
+
+if [ -f "$TMP_DIR/test.pdf" ]; then
     cp "$TMP_COOKIE" "$COOKIE_FILE"
     echo ""
     echo "Login successful! Cookies saved to: $COOKIE_FILE"
-elif [ -n "$SESSION_COOKIE" ]; then
-    cp "$TMP_COOKIE" "$COOKIE_FILE"
-    echo ""
-    echo "WARNING: Session cookie set but sign-out link not detected in page."
-    echo "         Cookies saved to: $COOKIE_FILE"
-    echo "         If downloads fail, check credentials and try again."
+    [ "$HTTP_STATUS" = "200" ] || echo "         (The portal page answered HTTP $HTTP_STATUS, but the session works.)"
 else
+    # Keep the page TIS returned so we can see why (concurrent login, account locked, outage, ...)
+    cp "$TMP_DIR/portal.html" "$(dirname "$COOKIE_FILE")/last-login-portal.html" 2>/dev/null
     echo ""
-    echo "ERROR: No T3SESSIONID cookie received. HTTP status: $HTTP_STATUS"
-    echo "       Portal page snippet:"
-    head -20 "$TMP_DIR/portal.html" | sed 's/^/         /'
+    echo "ERROR: Got a session cookie, but it could not fetch the test page $TESTPAGE."
+    echo "       Cookies NOT saved.  Portal page HTTP status: $HTTP_STATUS, saved to $(dirname "$COOKIE_FILE")/last-login-portal.html"
+    echo "       Title: $(grep -io '<title>[^<]*' "$TMP_DIR/portal.html" 2>/dev/null | head -1 | sed 's/<title>//I')"
     exit 1
 fi

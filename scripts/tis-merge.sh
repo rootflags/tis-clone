@@ -4,6 +4,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
+. ${SCRIPT_BASE}/tis-log.sh
 
 if [ x$1 = x ]; then
 	echo "This command syncs any new updates into your existing TIS tree"

@@ -1,0 +1,262 @@
+#!/bin/sh
+#
+# Download a vehicle's whole FSM and turn it into a working local website, in one command
+#
+# Finds which manuals TIS has for the code(s), downloads each with the matching dl-*.sh script, downloads
+# the shared website framework and then, if nothing failed, cleans up the links, builds the front page and
+# makes the PDFs.
+#
+# Each run saves the command, the manuals it found and each step it finishes in $DOWNLOAD_TO/tis-clone.resume.
+# "tis-clone --resume" runs the last command again, skipping finished steps (it needs no login until there
+# is something left to download) and first rechecking the last files downloaded in case the computer
+# stopped while writing them.  Every download also skips files already in the MANIFEST, so rerunning the
+# same command (without --resume) also carries on, it just checks every manual again.
+#
+
+. ${HOME}/.tis/tis-clone.cfg
+. ${SCRIPT_BASE}/tis-log.sh
+
+# Ctrl-C reaches the running download too; this runs once it has stopped (and saved its progress)
+trap 'echo ""; echo "Interrupted.  Run $0 --resume to carry on where it stopped."; exit 130' INT
+
+usage() {
+	echo "Syntax: $0 [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--no-pdf]"
+	echo "        $0 --resume"
+	echo "    ie: $0 30B0U                  everything TIS has for 30B0U"
+	echo "        $0 23C0U --bm 18M0U       23C0U, except the body/collision manual from 18M0U"
+	echo "        $0 --rm 30B0U --bm 30B0U  only the repair and body/collision manuals"
+	echo ""
+	echo "  CODE     the 5 character identifier from the TIS URLs (ie: rm/RM30B0U), used for every"
+	echo "           section not given separately"
+	echo "  --rm     Repair Manual (RM)"
+	echo "  --ewd    Electrical Wiring Diagrams (EM, EWD or WD)"
+	echo "  --bm     Body/Collision Repair (BM, CR or BR)"
+	echo "  --nm     New Car Features (NM or NCF)"
+	echo "  --no-pdf don't make PDFs after downloading (they take a long time, and the website doesn't need them)"
+	echo "  --resume carry on with the last command where it stopped (after Ctrl-C, a reboot or a failed login)"
+	echo ""
+	echo "Sections TIS doesn't have for CODE are skipped.  Run from anywhere; files go to ${DOWNLOAD_TO}."
+}
+
+STATE=${DOWNLOAD_TO}/tis-clone.resume
+RESUME=0
+if [ "x$1" = x--resume ]; then
+	if [ $# != 1 ]; then
+		echo "--resume reruns the last command, so it takes no other options"; exit 1
+	fi
+	ARGS=`sed -n 's/^ARGS //p' ${STATE} 2>/dev/null`
+	if [ "x${ARGS}" = x ]; then
+		echo "Nothing to resume (no ${STATE}).  Run $0 with a CODE first."; exit 1
+	fi
+	if grep -q '^FINISHED' ${STATE}; then
+		echo "The last run, $0 ${ARGS}, finished.  Nothing to resume."; exit 0
+	fi
+	echo "Resuming: $0 ${ARGS}"
+	RESUME=1
+	set -- ${ARGS}
+fi
+done_before() {
+	[ ${RESUME} = 1 ] && grep -qx "DONE $1" ${STATE}
+}
+
+ARGS="$*"
+RERUN="$0 --resume"
+CODE=""
+RM=""
+EWD=""
+BM=""
+NM=""
+PDF=1
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--rm|--ewd|--bm|--nm)
+			if [ x$2 = x ] || [ `expr "x$2" : 'x-'` = 2 ]; then
+				echo "$1 needs a CODE"; echo; usage; exit 1
+			fi
+			if [ `expr "x$2" : 'x[A-Za-z0-9]*$'` = 0 ]; then
+				echo "$2 doesn't look like a CODE (letters and digits, ie: 30B0U)"; exit 1
+			fi
+			case "$1" in
+				--rm) RM=$2 ;;
+				--ewd) EWD=$2 ;;
+				--bm) BM=$2 ;;
+				--nm) NM=$2 ;;
+			esac
+			shift 2 ;;
+		--no-pdf) PDF=0; shift ;;
+		-h|--help) usage; exit 0 ;;
+		-*) echo "Unknown option $1"; echo; usage; exit 1 ;;
+		*)
+			if [ x${CODE} != x ]; then
+				echo "Only one CODE please (use --rm, --ewd, --bm and --nm for different codes)"; echo; usage; exit 1
+			fi
+			if [ `expr "x$1" : 'x[A-Za-z0-9]*$'` = 0 ]; then
+				echo "$1 doesn't look like a CODE (letters and digits, ie: 30B0U)"; exit 1
+			fi
+			CODE=$1; shift ;;
+	esac
+done
+
+# Sections asked for by name must exist; the rest come from CODE and are skipped if TIS doesn't have them
+ASKED="${RM:+rm }${EWD:+ewd }${BM:+bm }${NM:+nm}"
+RM=${RM:-$CODE}
+EWD=${EWD:-$CODE}
+BM=${BM:-$CODE}
+NM=${NM:-$CODE}
+if [ x${RM}${EWD}${BM}${NM} = x ]; then
+	usage
+	exit 1
+fi
+
+cd ${DOWNLOAD_TO} || exit 1
+EN=/t3Portal/external/en
+if [ ${RESUME} = 0 ]; then
+	echo "# tis-clone: the last command, the manuals it found and the steps it finished.  Read by $0 --resume" > ${STATE}
+	echo "ARGS ${ARGS}" >> ${STATE}
+fi
+
+# Candidate tables of contents per section: "section script code path"
+LIST=${TISTMPDIR}/tis-clone.$$
+trap 'rm -f ${LIST}' EXIT
+{
+	[ x${RM} != x ] && echo "rm dl-html-rm.sh ${RM} ${EN}/rm/RM${RM}/toc.xml"
+	if [ x${EWD} != x ]; then
+		for P in EM EWD ""; do
+			echo "ewd dl-html-ewd.sh ${EWD} ${EN}/ewdappu/${P}${EWD}/xhtml/termdata.xml"
+		done
+		echo "ewd dl-pdf-ewd.sh ${EWD} ${EN}/ewd/EWD${EWD}/toc.xml"
+		echo "ewd dl-pdf-em.sh ${EWD} ${EN}/ewd/EM${EWD}/toc.xml"
+		echo "ewd dl-pdf-wd.sh ${EWD} ${EN}/ewd/WD${EWD}/toc.xml"
+	fi
+	if [ x${BM} != x ]; then
+		echo "bm dl-html-bm.sh ${BM} ${EN}/cr/BM${BM}/toc.xml"
+		echo "bm dl-html-cr.sh ${BM} ${EN}/cr/CR${BM}/toc.xml"
+		echo "bm dl-pdf-br.sh ${BM} ${EN}/cr/BR${BM}/toc.xml"
+	fi
+	if [ x${NM} != x ]; then
+		echo "nm dl-html-nm.sh ${NM} ${EN}/ncf/NM${NM}/toc.xml"
+		echo "nm dl-html-ncf.sh ${NM} ${EN}/ncf/NCF${NM}/toc.xml"
+	fi
+} > ${LIST}
+
+FAILED=0
+TODO=`sed -n 's/^TODO //p' ${STATE}`
+if [ ${RESUME} = 1 ] && [ "x${TODO}" != x ]; then
+	# Same manuals as last time, so no need to ask TIS (or log in) again
+	sed -n 's/^NOTFOUND /    ** /p' ${STATE}
+	grep -q '^NOTFOUND' ${STATE} && FAILED=1
+else
+	## Find out which manuals TIS has (one login check for all of them)
+	echo "Checking which manuals TIS has..."
+	cut -d' ' -f4 ${LIST} | ${SCRIPT_BASE}/tis-fetch.py -q --no-requisites -i -
+	RC=$?
+	if [ $RC = 75 ]; then
+		echo "Stopped because the TIS session expired.  When you're ready to log in, run ${RERUN} to carry on."
+		exit 75
+	elif [ $RC != 0 ]; then
+		echo "Could not check which manuals exist (see above).  Run ${RERUN} to try again."
+		exit 1
+	fi
+
+	TODO=""
+	FOUND=""
+	while read -r SECTION SCRIPT C P; do
+		F=${FSM_URLBASE}${P}
+		if [ -f ${F} ] && { [ ${SCRIPT} = dl-html-ewd.sh ] || grep -q "href=.*xhtml" ${F}; }; then
+			# dl-html-ewd.sh finds the EM/EWD/bare folder itself, so only run it once
+			case " ${TODO} " in *" ${SCRIPT}:${C} "*) continue ;; esac
+			TODO="${TODO} ${SCRIPT}:${C}"
+			FOUND="${FOUND} ${SECTION}"
+			echo "    found `echo ${P} | cut -d/ -f5-6`"
+		fi
+	done < ${LIST}
+
+	for S in rm ewd bm nm; do
+		case " ${FOUND} " in *" ${S} "*) continue ;; esac
+		case ${S} in rm) C=${RM} ;; ewd) C=${EWD} ;; bm) C=${BM} ;; nm) C=${NM} ;; esac
+		[ x${C} = x ] && continue
+		case " ${ASKED} " in
+			*" ${S} "*) echo "    ** no ${S} manual on TIS for ${C} (asked for with --${S})"; FAILED=1
+				echo "NOTFOUND no ${S} manual on TIS for ${C} (asked for with --${S})" >> ${STATE} ;;
+			*) echo "    (no ${S} manual on TIS for ${C}, skipping)" ;;
+		esac
+	done
+	if [ x"${TODO}" = x ]; then
+		echo "TIS has none of the manuals asked for.  Check the code(s)."
+		exit 1
+	fi
+	echo "TODO${TODO}" >> ${STATE}
+fi
+
+# The computer may have stopped while saving the last few files; check them (and download bad ones again)
+if [ -f ${DOWNLOAD_TO}/MANIFEST ]; then
+	${SCRIPT_BASE}/tis-verify.py --last 20 --fix
+fi
+
+## Download each manual, then the shared website framework
+CODES=""
+for T in ${TODO} dl-framework.sh:; do
+	SCRIPT=${T%%:*}
+	C=${T#*:}
+	case " ${CODES} " in *" ${C} "*) ;; *) [ x${C} != x ] && CODES="${CODES} ${C}" ;; esac
+	echo ""
+	if done_before ${T}; then
+		echo "########## ${SCRIPT} ${C}: finished last time, skipping"
+		continue
+	fi
+	echo "########## ${SCRIPT} ${C}"
+	${SCRIPT_BASE}/${SCRIPT} ${C}
+	RC=$?
+	if [ $RC = 75 ]; then
+		echo "Stopped because the TIS session expired.  When you're ready to log in, run ${RERUN} to carry on."
+		exit 75
+	elif [ $RC = 130 ]; then
+		echo "Interrupted.  Run ${RERUN} to carry on where it stopped."
+		exit 130
+	fi
+	if [ $RC = 0 ]; then
+		echo "DONE ${T}" >> ${STATE}
+	else
+		FAILED=1
+	fi
+done
+
+if [ ${FAILED} != 0 ]; then
+	echo ""
+	echo "Some downloads didn't finish.  ${SCRIPT_BASE}/tis-report.py shows what and why; rerun ${RERUN} to retry."
+	echo "The website clean-up and PDFs run once everything has downloaded."
+	exit 1
+fi
+
+## Make it a website: local links, front page
+echo ""
+echo "########## Building the website"
+${SCRIPT_BASE}/tis-urlstripper.sh
+${SCRIPT_BASE}/build-index.pl > ${FSM_URLBASE}/index.html.new && mv -f ${FSM_URLBASE}/index.html.new ${FSM_URLBASE}/index.html
+echo "Website ready in ${FSM_URLBASE}.  To browse it: ${SCRIPT_BASE}/tis-serve.py"
+
+## PDFs (optional, slow).  The website is already complete, so a problem here doesn't break it.
+if [ ${PDF} = 1 ]; then
+	echo ""
+	echo "########## Making PDFs (skip with --no-pdf)"
+	for C in ${CODES}; do
+		if done_before pdf:${C}; then
+			echo "PDFs for ${C}: finished last time, skipping"
+		elif ${SCRIPT_BASE}/tis-mkpdfs.sh ${C}; then
+			echo "DONE pdf:${C}" >> ${STATE}
+		else
+			FAILED=1
+		fi
+	done
+	if [ -d ${FSM_URLBASE}/PDFs ]; then
+		${SCRIPT_BASE}/build-pdfidx.sh > ${FSM_URLBASE}/PDFs/index.html
+		# The front page links the PDF index once it exists
+		${SCRIPT_BASE}/build-index.pl > ${FSM_URLBASE}/index.html.new && mv -f ${FSM_URLBASE}/index.html.new ${FSM_URLBASE}/index.html
+	fi
+	[ ${FAILED} = 0 ] || echo "Making the PDFs had problems (see above).  The website is fine."
+fi
+
+echo ""
+echo "Done.  To browse it: ${SCRIPT_BASE}/tis-serve.py"
+[ ${FAILED} = 0 ] && echo "FINISHED `date '+%Y-%m-%d %H:%M:%S'`" >> ${STATE}
+exit ${FAILED}

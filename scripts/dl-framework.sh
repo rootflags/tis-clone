@@ -2,97 +2,81 @@
 #
 # Download all of the website framework
 #
+# Uses tis-fetch.py (see dl-html-ewd.sh), so rerunning it resumes and skips files already in the
+# MANIFEST.  The ewd.js and all-t3.js patches below are redone on every run from the saved .orig, so
+# this can run before or after the wiring diagram download.
+#
 
 . ${HOME}/.tis/tis-clone.cfg
-${SCRIPT_BASE}/confirm-login.sh || exit 1
+. ${SCRIPT_BASE}/tis-log.sh
+
+LIST=${TISTMPDIR}/dl-framework.$$
+trap 'rm -f ${LIST}' EXIT
 
 # Set up local website framework CSS
 cp -a ${BASE}/website-framework/* ${FSM_URLBASE}/
 
+{
+	# Patched below
+	echo /t3Portal/external/en/ewdappu/system/js/ewd/ewd.js
+	echo /t3Portal/framework/skins/t3/js/all-t3.js
+
+	# Wiring Diagram framework.  The viewer loads these scripts itself, so they aren't found as page links.
+	for F in ewdappu/index.jsp ewdappu/pdrSelect.html \
+		external/en/ewdappu/system/js/ewd/EMUtil.js external/en/ewdappu/system/js/ewd/dict_ewdconst.js \
+		external/en/ewdappu/system/js/ewd/dict_ewdmessage.js external/en/ewdappu/system/js/ewd/lib/EWDPrint.js \
+		external/en/ewdappu/system/js/ewd/lib/WireList.js external/en/ewdappu/system/js/ewd/lib/domparser.js \
+		external/en/ewdappu/system/js/ewd/fig/svgfig.js staticcontent/js/t3StaticContentCommon.js \
+		portlets/tis/document/myFavorite/addLastVisitedDocs.do; do
+		echo /t3Portal/${F}
+	done
+
+	# Shared navigation images
+	for F in empty page pagesel folder foldersel folderopen plus minus; do
+		echo /t3Portal/resources/jsp/siviewer/icons/${F}.gif
+	done
+	for F in english_selected spanish_selected french_selected english_available spanish_available \
+		french_available en_unavailable es_unavailable fr_unavailable; do
+		echo /t3Portal/resources/images/language/en/${F}.png
+	done
+	# The TIS stylesheet; its images include the header bar that build-index.pl and build-pdfidx.sh use
+	echo /t3Portal/framework/skins/t3/css/all-t3.css
+	echo /favicon.ico
+	for F in stylegraphics/clear.gif stylegraphics/header-left.gif stylegraphics/header-right.gif \
+		resources/jsp/images/clear.gif resources/jsp/siviewer/icons/tis.png; do
+		echo /t3Portal/${F}
+	done
+
+	# The TIS siviewer navigation pages (resources/jsp/siviewer/*.jsp) aren't needed: each manual gets its
+	# own navigation from toc2html, and only the siviewer icons above are used.
+} > ${LIST}
+
+# favicon.ico lives outside /t3Portal/
+${SCRIPT_BASE}/tis-fetch.py --scope / -i ${LIST}
+RC=$?
+[ $RC = 75 ] && exit 75
+
+# Rewrite $1 from $1.orig with sed expression $3.  $2 is text only the patched file contains, so a
+# freshly downloaded (unpatched) file gets moved to .orig first.
+patch() {
+	F=${FSM_URLBASE}$1
+	[ -f ${F} ] || return
+	grep -qF "$2" ${F} || mv -f ${F} ${F}.orig
+	[ -f ${F}.orig ] && sed -e "$3" ${F}.orig > ${F}
+}
+
 # ewd.js requires a change to force using the uncompressed SVG images.
-$WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/ewd.js
-mv -f ${FSM_URLBASE}/t3Portal/external/en/ewdappu/system/js/ewd/ewd.js ${FSM_URLBASE}/t3Portal/external/en/ewdappu/system/js/ewd/ewd.js.orig
-cat  ${FSM_URLBASE}/t3Portal/external/en/ewdappu/system/js/ewd/ewd.js.orig | \
-	sed -e 's;ElY.EsZ="/fig";ElY.EsZ="/figsvg";g' | \
-	sed -e 's;ElY.Esa=".svgz";ElY.Esa=".svg";g' | \
-	sed -e 's;Ejx.EsZ="/fig";Ejx.EsZ="/figsvg";g' | \
-	sed -e 's;Ejx.Esa=".svgz";Ejx.Esa=".svg";g' \
-	>  ${FSM_URLBASE}/t3Portal/external/en/ewdappu/system/js/ewd/ewd.js
+patch /t3Portal/external/en/ewdappu/system/js/ewd/ewd.js 'ElY.EsZ="/figsvg";ElY.Esa=".svg";ElY.Esb' \
+	's;ElY.EsZ="/fig";ElY.EsZ="/figsvg";g; s;ElY.Esa=".svgz";ElY.Esa=".svg";g; s;Ejx.EsZ="/fig";Ejx.EsZ="/figsvg";g; s;Ejx.Esa=".svgz";Ejx.Esa=".svg";g'
 
-$WG ${WEBSITE}/t3Portal/framework/skins/t3/js/all-t3.js
-mv -f ${FSM_URLBASE}/t3Portal/framework/skins/t3/js/all-t3.js ${FSM_URLBASE}/t3Portal/framework/skins/t3/js/all-t3.js.orig
-cat ${FSM_URLBASE}/t3Portal/framework/skins/t3/js/all-t3.js.orig | \
-	sed -e 's;self.AJAX.setRequestHeader("Connection";//self.AJAX.setRequestHeader("Connection";g' \
-	> ${FSM_URLBASE}/t3Portal/framework/skins/t3/js/all-t3.js
-
-# Retrieve Wiring Diagram framework
-$WG ${WEBSITE}/t3Portal/ewdappu/index.jsp
-$WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/EMUtil.js
-$WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/dict_ewdconst.js
-$WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/dict_ewdmessage.js
-$WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/lib/EWDPrint.js
-$WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/lib/WireList.js
-$WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/lib/domparser.js
-$WG ${WEBSITE}/t3Portal/external/en/ewdappu/system/js/ewd/fig/svgfig.js
-$WG ${WEBSITE}/t3Portal/ewdappu/pdrSelect.html
-$WG ${WEBSITE}/t3Portal/staticcontent/js/t3StaticContentCommon.js
-$WG ${WEBSITE}/t3Portal/portlets/tis/document/myFavorite/addLastVisitedDocs.do
-
-# Download shared navigation images.  
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/empty.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/page.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/pagesel.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/folder.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/foldersel.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/plus.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/folderopen.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/minus.gif
-$WG ${WEBSITE}/t3Portal/resources/images/language/en/english_selected.png
-$WG ${WEBSITE}/t3Portal/resources/images/language/en/spanish_selected.png
-$WG ${WEBSITE}/t3Portal/resources/images/language/en/french_selected.png
-$WG ${WEBSITE}/t3Portal/resources/images/language/en/english_available.png
-$WG ${WEBSITE}/t3Portal/resources/images/language/en/spanish_available.png
-$WG ${WEBSITE}/t3Portal/resources/images/language/en/french_available.png
-$WG ${WEBSITE}/t3Portal/resources/images/language/en/en_unavailable.png
-$WG ${WEBSITE}/t3Portal/resources/images/language/en/es_unavailable.png
-$WG ${WEBSITE}/t3Portal/resources/images/language/en/fr_unavailable.png
-$WG ${WEBSITE}/favicon.ico
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/folder.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/empty.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/page.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/pagesel.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/folder.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/plus.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/foldersel.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/folderopen.gif
-$WG ${WEBSITE}/t3Portal/resources/jsp/siviewer/icons/minus.gif
-$WG ${WEBSITE}/t3Portal/stylegraphics/clear.gif
-$WG ${WEBSITE}/t3Portal/stylegraphics/header-left.gif
-$WG ${WEBSITE}/t3Portal/stylegraphics/header-right.gif
-
-# Download siviewer, which is the navigation menus.  Then fix the 
-${WG} ${WEBSITE}'/t3Portal/resources/jsp/siviewer/index.jsp?dir=rm/RM27J0U&href=xhtml/RM100000000SXI0.html&locale=en&model=Land%20Cruiser&MY=2020&t3id=RM100000000SXI0&User=false&publicationNumber=RM27J0U&objType=rm&docid=en_rm_RM27J0U_RM100000000SXI0&context=ti'
-ls -1 ${FSM_URLBASE}/t3Portal/resources/jsp/siviewer/*\?* | sort | while read -r WEBFILE
-do
- 	NEW=`echo $WEBFILE | cut -d\? -f1`
-	mv "$WEBFILE" "$NEW"
-done
+patch /t3Portal/framework/skins/t3/js/all-t3.js '//self.AJAX.setRequestHeader("Connection"' \
+	's;self.AJAX.setRequestHeader("Connection";//self.AJAX.setRequestHeader("Connection";g'
 
 # Actual website is missing this image, so let's include it to make the results better
-if [ ! -f ${FSM_URLBASE}/t3Portal/stylegraphics/ ]; then
+if [ ! -f ${FSM_URLBASE}/t3Portal/stylegraphics/clear.gif ] && [ -f ${FSM_URLBASE}/t3Portal/resources/jsp/images/clear.gif ]; then
+	mkdir -p ${FSM_URLBASE}/t3Portal/stylegraphics
 	cp ${FSM_URLBASE}/t3Portal/resources/jsp/images/clear.gif ${FSM_URLBASE}/t3Portal/stylegraphics/
 fi
 
-# Strip out external URL calls
-FOLDER="${FSM_URLBASE}/t3Portal/resources/jsp/siviewer"
-FILES=`find ${FOLDER} -type f|egrep '\.(xml|htm|html|xsl|js|css|jsp)'|cut -d: -f1|sort -u`
-for F in $FILES; do
-	X=`expr $X + 1`
-	echo "Processing $F ($X)"
-	perl -p -i -e "s;https://techinfo.toyota.com:443;${MYURL};g" $F
-	perl -p -i -e "s;https://techinfo.toyota.com;${MYURL};g" $F
-	perl -p -i -e "s;techinfo.toyota.com;${MYURL};g" $F
-	perl -p -i -e "s;https://techinfo.qa2ddc.toyota.com;${MYURL};g" $F
-	perl -p -i -e "s;https://techinfo.snapon.com;${MYURL};g" $F
-done
-
+[ $RC = 0 ] || echo "Some files FAILED.  Rerun $0 to retry them; see ${DOWNLOAD_TO}/MANIFEST"
+exit $RC
