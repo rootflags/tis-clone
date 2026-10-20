@@ -30,25 +30,28 @@ mkdir -p $PDFDIR
 
 MODEL=""
 
-# Body/Collision Repair Manual
+# Repair, Body/Collision Repair and New Car Features manuals (and older PDF manuals with a toc.xml): one PDF
+# per manual, with working links and bookmarks.  See tis-pdfbook.py.
+FAILED=0
 for XHTML in `find . -type d -name xhtml|grep 'document.*/xhtml$'|grep ${GSICCODE}`
 do
-	echo "Processing $GSICCODE folder $XHTML:"
-	ORIGDIR=`pwd`
-	echo "* Generating PDFs for ${GSICCODE} in $XHTML"
-	cd $XHTML 
-	${SCRIPT_BASE}/tis-xhtml2pdf.sh 
-	echo "* Consolidating PDFs for ${GSICCODE} in $XHTML"
-	cd ${ORIGDIR}
 	TOC=`echo $XHTML|sed -e 's/xhtml$/toc.xml/g'|sed -e 's:/document/:/external/en/:g'`
-
+	[ -f ${TOC} ] || continue
+	DOCID=`basename \`dirname ${TOC}\``
+	case ${DOCID} in
+		RM*) TYPE=RepairManual ;;
+		NM*|NCF*) TYPE=NewCarFeatures ;;
+		BM*|CR*) TYPE=CollisionRepair ;;
+		BR*) TYPE=BodyRepair ;;
+		EM*|EWD*|WD*) TYPE=ElectricalWiringDiagram ;;
+		*) TYPE=Manual ;;
+	esac
 	if [ x"${MODEL}" = x ]; then
 		MODEL=`${SCRIPT_BASE}/toc2topic ${TOC}`
 		mkdir -p "${PDFDIR}/${MODEL}"
 	fi
-	echo "* Converting toc $TOC to pdf in $PDFDIR/$MODEL"
-	${SCRIPT_BASE}/toc2pdf -x ${TOC} -p "${PDFDIR}/${MODEL}"
-	rm -f $XHTML/*.pdf
+	echo "* Making ${PDFDIR}/${MODEL}/${TYPE}-${DOCID}.pdf"
+	${SCRIPT_BASE}/tis-pdfbook.py ${TOC} "${PDFDIR}/${MODEL}/${TYPE}-${DOCID}.pdf" || FAILED=1
 done
 
 # *** EVERYTHING BELOW HERE NEEDS WORK
@@ -105,3 +108,5 @@ do
 done
 
 # Regenerate PDF index file(s)
+
+exit ${FAILED}

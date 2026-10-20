@@ -40,14 +40,22 @@ if [ $? != 0 ]; then
 	exit 1
 fi
 
+# PDFs: tis-pdfbook.py needs pikepdf, and wkhtmltopdf's "patched qt" build for links inside the PDFs
+python3 -c "import pikepdf" > /dev/null 2>&1
+if [ $? != 0 ]; then
+	echo "** Python module pikepdf not found (apt install python3-pikepdf).  Needed to make PDFs."
+	exit 1
+fi
+wkhtmltopdf -V 2>/dev/null | grep -q "patched qt"
+if [ $? != 0 ]; then
+	echo "** Warning: wkhtmltopdf is not the \"with patched qt\" build, so links inside PDFs won't work."
+	echo "   Get it from https://wkhtmltopdf.org/downloads.html"
+fi
+
 echo "Creating folders..."
 mkdir -p $TISTMPDIR
 mkdir -p $DOWNLOAD_TO
 mkdir -p $CONFIG_DIR
-mkdir -p $MYURL_BASE
-if [ $? != 0 ]; then
-	echo "** No permission to create $MYURL_BASE.  Create and set ownership to $USER before proceeding **"
-fi
 
 if [ -f $CONFIG_DIR/tis-clone.cfg ]; then
 	echo "$CONFIG_DIR/tis-clone.cfg already exists, skipping (NOT overwriting)"

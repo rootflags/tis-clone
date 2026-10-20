@@ -26,6 +26,23 @@
 
 5. Downloading:
 * By default the setup.sh script will create the download folder based on the $DOWNLOAD_TO variable in tis-clone.cfg.  If you create a different location you'll need to modify ~/.tis/tis-clone.cfg
+* **The easy way: one command does steps 5 to 9.**  It works out which manuals TIS has for the identifier (RM, EM/EWD/WD, BM/CR/BR, NM/NCF), downloads them and the website framework, and then, if nothing failed, cleans up the links, builds the front page and makes the PDFs.  Rerun the same command to resume after an interruption or failure.
+
+         ~/tis-clone/tis-clone $IDENTIFIER
+
+  When a section uses a different identifier, give it separately; the main identifier covers the rest.  Without a main identifier, only the sections you name are downloaded:
+
+         ~/tis-clone/tis-clone 23C0U --bm 18M0U            # 2013 Prius V
+         ~/tis-clone/tis-clone --rm 30B0U --bm 30B0U       # only the repair and body/collision manuals
+         ~/tis-clone/tis-clone 30B0U --no-pdf              # skip the (slow) PDFs; the website doesn't need them
+
+  **If it stops** (the login keeps failing so you try again later, you press Ctrl-C, the computer restarts, ...), carry on with:
+
+         ~/tis-clone/tis-clone --resume
+
+  It reruns your last command (saved in `$DOWNLOAD_TO/tis-clone.resume`), skips the manuals and PDFs that already finished, and continues the rest without downloading files again.  It only asks you to log in once there's something left to download.  It also rechecks the last files downloaded before the stop, in case the computer went down while saving them, and downloads any bad ones again.
+
+  The rest of steps 5 to 9 describe what it runs, if you'd rather do it by hand.
 * cd into the download folder and run the downloader for each manual type, using the identifier above:
 
          . ~/.tis/tis-clone.cfg
@@ -39,7 +56,7 @@
 
   If the identifiers are different per section just run the relevant ones.  This can happen when multiple model years share some but not all docs.  For older (roughly 1990-2000) vehicles whose manuals are PDFs, use the matching `dl-pdf-*.sh` scripts instead; they work the same way.
 * Downloads take a while (the RAV4 repair manual is about 12,000 files and 2.5 hours, the wiring diagrams a few hours more).  Run them in `screen` or `tmux` and keep the terminal handy:
-  * TIS ends a session after about 5 hours.  The downloader notices, runs tis-login.sh for you and waits for you to type the 2FA code, then carries on where it stopped.  If that login fails it tries twice more, 1 and then 5 minutes later, and if TIS isn't answering at all it waits (up to 30 minutes) before sending you a code.
+  * TIS ends a session after about 5 hours.  The downloader notices and pauses, beeps, and waits for you: nothing is sent while you're away.  When you're back, press Enter; it checks TIS is answering, runs tis-login.sh to send you a 2FA code, and carries on where it stopped once you type it in.  If the login doesn't work you're asked again.  Type q at the prompt to stop instead (rerun the same command later to resume).
   * Everything the scripts print is also appended to `$DOWNLOAD_TO/tis-clone.log` (set `TIS_LOG` in tis-clone.cfg to use another file).  Each run is marked with a `===== date start: command` line and a `===== date exit STATUS: command` line, so `grep '^=====' tis-clone.log` lists every run and how it ended.  The log is only readable by you, since it can include login messages.
   * Progress is kept in `$DOWNLOAD_TO/MANIFEST`, a plain text file with one line per file: `STATUS  PATH  BYTES  TIME  NOTE`.  STATUS is OK, MISSING (404 on TIS), FORBIDDEN (TIS refused it while logged in) or FAILED.  The last line for a path wins.
   * If a download stops (Ctrl-C, network trouble, a login you couldn't finish), just run the same command again.  Files already OK, MISSING or FORBIDDEN are skipped and FAILED ones are retried.  To force a file to download again, delete its lines from MANIFEST.
@@ -53,8 +70,11 @@
 7. Clean up a ton of unneeded links and external website references that won't work locally.  Rerun it after downloading more manuals:
 * Run ```~/tis-clone/scripts/tis-urlstripper.sh``` to remove external URLs and remove various garbage that gets created
 
-8. Create PDFs, if you want them (the wiring diagram part is a work in progress):
+8. Create PDFs, if you want them:
 * ```~/tis-clone/scripts/tis-mkpdfs.sh $IDENTIFIER```
+* Each manual (repair, collision, new car features) becomes one PDF in `$DOWNLOAD_TO/techinfo.toyota.com/PDFs/<model>/`, ie: `RepairManual-RM30B0U.pdf`, with the pages in the same order as the website.  Links between pages work inside the PDF on any device (phone, tablet, browser or desktop), and the bookmarks follow the website's navigation.  Links to a different manual go to your website if `MYURL` is set to it, and are left out otherwise.
+* It needs wkhtmltopdf's "with patched qt" build (`wkhtmltopdf -V` says so; https://wkhtmltopdf.org/downloads.html) and pikepdf (`apt install python3-pikepdf`).  Pages are rendered several at a time and kept in `$DOWNLOAD_TO/pdfwork`, so it resumes if interrupted; the 2013-2018 RAV4 repair manual (4,500 pages of HTML, 15,000 PDF pages) takes about 5 minutes on 8 cores.
+* The wiring diagrams are made into four PDFs (overall, relay, routing, system) from TIS's own diagram PDFs.
 
 9. Create Navigation.  Rerun it after downloading more manuals:
 * For HTML docs: ```~/tis-clone/scripts/build-index.pl > $DOWNLOAD_TO/techinfo.toyota.com/index.html```
@@ -90,6 +110,9 @@ The best way around this problem is to set up a local webserver.  One you have y
 # Script reference
 All scripts are in `~/tis-clone/scripts` and read their settings from `~/.tis/tis-clone.cfg`.  Run the downloaders from `$DOWNLOAD_TO`.  Except for the ones that print a web page (`build-index.pl`, `build-pdfidx.sh`, `toc2html` and the other `toc2*` tools), every script also appends its output to `$DOWNLOAD_TO/tis-clone.log` (see step 5); `tis-log.sh` and `tislog.py` are the shared code that does this.
 
+Everything at once
+* `~/tis-clone/tis-clone [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--no-pdf]` - find which manuals TIS has, download them and the framework, then (if nothing failed) run tis-urlstripper.sh, build-index.pl and the PDF scripts (step 5).  `tis-clone --resume` carries on with the last command where it stopped.
+
 Logging in
 * `tis-login.sh [-u USERNAME] [-p PASSWORD] [-m 0|1]` - log in to TIS (with 2FA) and save the session in ~/.tis/cookies.txt.  Defaults come from TIS_USERNAME, TIS_PASSWORD and TIS_MFA in tis-clone.cfg.
 * `confirm-login.sh` - check that the saved session works (exit status 0 if it does, 75 if not).  Same as `tis-fetch.py --check`.
@@ -107,7 +130,7 @@ Downloading (older vehicles and odds and ends; these also use tis-fetch.py and t
 
 Checking and cleaning up
 * `tis-report.py [-v] [--retry STATUS,...] [--paths STATUS]` - report on the MANIFEST: counts per manual, every FAILED and FORBIDDEN file with the reason, MISSING files by folder (normal ones marked), OK files no longer on disk (GONE), recent runs that didn't finish, and the commands to fix it all.  `--retry FORBIDDEN,MISSING,GONE` marks those for download on the next run; `--paths FAILED` prints just the paths.  Exit status 1 if anything needs downloading.
-* `tis-verify.sh [--fix] [-v] [FOLDER]` (or `tis-verify.py`) - check the files on disk: TIS login pages saved in place of pages, images, PDFs and videos (from expired sessions, mostly in downloads made before tis-fetch.py), "PDFs" that are really a redirect page, files that aren't what their name says, empty files, and documents listed in a toc.xml that were never downloaded.  `--fix` marks the bad files FAILED in the MANIFEST and the good files it didn't know about OK, so rerunning the download scripts fetches only what's needed; then `tis-report.py` lists the commands.  This is how to repair an old wget download:
+* `tis-verify.sh [--fix] [-v] [FOLDER]` (or `tis-verify.py`) - check the files on disk: TIS login pages saved in place of pages, images, PDFs and videos (from expired sessions, mostly in downloads made before tis-fetch.py), "PDFs" that are really a redirect page, files that aren't what their name says, empty files, and documents listed in a toc.xml that were never downloaded.  `--last N` checks only the last N files downloaded (tis-clone --resume does this).  `--fix` marks the bad files FAILED in the MANIFEST and the good files it didn't know about OK, so rerunning the download scripts fetches only what's needed; then `tis-report.py` lists the commands.  This is how to repair an old wget download:
 
          ~/tis-clone/scripts/tis-verify.sh --fix
          ~/tis-clone/scripts/tis-report.py        # then run the commands it lists
@@ -115,10 +138,11 @@ Checking and cleaning up
 
 Building the website and PDFs
 * `build-index.pl > index.html` - front page listing every downloaded manual (step 9).
-* `tis-serve.py [-p PORT] [-b ADDRESS] [FOLDER]` - serve the download for browsing (see below).
-* `tis-mkpdfs.sh IDENTIFIER` - make consolidated PDFs (step 8).  It uses `tis-xhtml2pdf.sh`, `toc2pdf` and `toc2topic`; `build-pdfidx.sh` makes the PDF index page.
+* `tis-serve.py [-p PORT] [-b ADDRESS] [FOLDER]` - serve the download for browsing (see below).  If the port is in use, it uses the next free one.
+* `tis-mkpdfs.sh IDENTIFIER` - make the PDFs (step 8), using `tis-pdfbook.py` for each manual and Ghostscript for the wiring diagrams; `build-pdfidx.sh` makes the PDF index page.
+* `tis-pdfbook.py TOC.XML OUT.PDF [-j JOBS]` - make one PDF of a manual, with working internal links and bookmarks from its toc.xml.
 * `repdf PDF ...` - split and re-merge PDF files.
 * `toc2html toc.xml` - navigation page for one manual (run by the downloaders).
 * `tis-merge.sh TARGET` - copy the current folder into your website (step 10).
 * `make-iso.sh` - build an ISO image of the download (written for the Land Cruiser; edit the name and volume label first).
-* Older helpers kept for reference, generally not needed anymore: `create-nav.sh`, `toc2nav`, `updatenav.pl`, `tis-consolidate.pl`, `tis-pdfer.sh`, `tis-html2pdf.sh`, `tis-html2pdf2.sh`.
+* Older helpers kept for reference, generally not needed anymore: `create-nav.sh`, `toc2nav`, `updatenav.pl`, `tis-consolidate.pl`, `tis-pdfer.sh`, `tis-html2pdf.sh`, `tis-html2pdf2.sh`, `tis-xhtml2pdf.sh`, `toc2pdf` (the old PDF method, which needed a `/t3Portal` link and couldn't keep links working).

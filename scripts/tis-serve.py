@@ -9,11 +9,14 @@
 #
 # Usage:
 #   tis-serve.py [-p PORT] [-b ADDRESS] [FOLDER]      FOLDER defaults to $FSM_URLBASE, PORT to 8080
+#                                                     (or the next free port if it's in use)
 #
 
-import argparse, functools, http.server, os, subprocess, sys
+import argparse, errno, functools, http.server, os, subprocess, sys
 
 from tislog import tee_to_log
+
+PORT_TRIES = 100
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -26,6 +29,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if self.path.split("?")[0].lower().endswith(".svgz"):
             self.send_header("Content-Encoding", "gzip")
         super().end_headers()
+
+
+def start_server(folder, bind="", port=8080, handler=Handler):
+    """An HTTP server for folder on port, or the next free port above it.  tis-pdfbook.py uses this too"""
+    for p in range(port, port + PORT_TRIES):
+        try:
+            return http.server.ThreadingHTTPServer((bind, p), functools.partial(handler, directory=folder))
+        except OSError as e:
+            if e.errno != errno.EADDRINUSE:
+                raise
+    sys.exit("Ports %d to %d are all in use" % (port, port + PORT_TRIES - 1))
 
 
 def main():
@@ -45,9 +59,11 @@ def main():
     if not folder or not os.path.isdir(folder):
         sys.exit("No folder to serve (%r)" % folder)
 
-    handler = functools.partial(Handler, directory=folder)
-    server = http.server.ThreadingHTTPServer((args.bind, args.port), handler)
-    print("Serving %s at http://%s:%d/  (Ctrl-C to stop)" % (folder, args.bind or "localhost", args.port), flush=True)
+    server = start_server(folder, args.bind, args.port)
+    port = server.server_address[1]
+    if port != args.port:
+        print("Port %d is in use, using %d" % (args.port, port))
+    print("Serving %s at http://%s:%d/  (Ctrl-C to stop)" % (folder, args.bind or "localhost", port), flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

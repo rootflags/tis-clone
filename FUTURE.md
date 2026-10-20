@@ -23,5 +23,4 @@ Most of the tools generate a lot of output.  That output often is not captured o
 There are a lot of steps in the [HOWTO.md](HOWTO.md) file.
 * Setup should also test for dependencies and try to remediate/install or at least warn the user they have work to do before getting started.
 * The first few steps to log in and make any config changes should be guided
-* Everything else should really be a single command that runs all the download tasks and then runs all the website and PDF creation tasks
 * It would be better if we could just prompt the user with the vehicle division/model/year like the website does and handle EVERYTHING based on that input

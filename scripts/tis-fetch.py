@@ -5,9 +5,10 @@
 # Downloads a list of TIS URLs plus the images, stylesheets and scripts each page needs, checking
 # every response for signs that the session has died.  TIS ends a session after ~5 hours (or when
 # the account logs in elsewhere) and then answers 403 with the login page as the body, or redirects
-# to the login page.  When that happens nothing is saved: tis-fetch runs tis-login.sh (you type the
-# 2FA code) and carries on with the same URL.  Without a terminal, or with --no-relogin, it exits 75
-# and rerunning the same command resumes where it stopped.
+# to the login page.  When that happens nothing is saved and the download pauses until you press Enter
+# (so the 2FA code isn't sent while you're away); then tis-fetch runs tis-login.sh, you type the code
+# and it carries on with the same URL.  Without a terminal, with --no-relogin, or if you type q at the
+# prompt, it exits 75 and rerunning the same command resumes where it stopped.
 #
 # Progress is kept in a plain-text MANIFEST (default: $DOWNLOAD_TO/MANIFEST), one line per URL path:
 #     STATUS <tab> /t3Portal/path <tab> bytes <tab> time <tab> note
@@ -42,12 +43,6 @@ TESTPAGE = "/t3Portal/staticcontent/en/techinfo/docs/glossary.pdf"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0"
 EXIT_SESSION = 75
 
-# Logging in again: wait this long after a failed attempt before the next one (seconds; each attempt sends a
-# 2FA code), and if the portal isn't answering at all, check every PORTAL_CHECK for up to PORTAL_WAIT
-RELOGIN_DELAYS = (60, 300)
-PORTAL_CHECK = 60
-PORTAL_WAIT = 30 * 60
-
 # Signs that TIS sent us to its login page instead of the document we asked for
 LOGIN_URL_RE = re.compile(r"concurrentLoginFailure|techInfoPortal/login|/openam/|prelogin", re.I)
 LOGIN_BODY_RE = re.compile(rb"Techinfo prelogin|openam/json/realms|concurrentLoginFailure", re.I)
@@ -73,11 +68,6 @@ DONE = ("OK", "MISSING", "FORBIDDEN")
 
 class SessionDead(Exception):
     pass
-
-
-def minutes(seconds):
-    return "%d minute%s" % (seconds // 60, "" if seconds // 60 == 1 else "s") if seconds >= 60 else \
-        "%d second%s" % (seconds, "" if seconds == 1 else "s")
 
 
 def load_cfg():
@@ -163,6 +153,7 @@ class Fetcher:
         self.counts[status] += 1
         self.manifest.write("%s\t%s\t%d\t%s\t%s\n" % (status, path, size, time.strftime("%Y-%m-%d %H:%M:%S"), note))
         self.manifest.flush()
+        os.fsync(self.manifest.fileno())
         if status == "FAILED":
             self.failed.append(path)
         if not self.args.quiet or status != "OK":
@@ -236,25 +227,31 @@ class Fetcher:
             print("No terminal to type the 2FA code into.")
             return False
         login = os.path.join(self.cfg["SCRIPT_BASE"], "tis-login.sh")
-        attempts = len(RELOGIN_DELAYS) + 1
+        # Downloads run for hours and nobody may be watching, and a 2FA code is only good for a few minutes,
+        # so wait for the user before asking TIS to send one.  Nothing is sent until they press Enter.
+        print("\a\n*** %s  The TIS session has expired, so the download is paused. ***\n"
+              "*** Press Enter when you're ready to receive the 2FA code (or type q and Enter to stop; ***\n"
+              "*** rerunning the same command later resumes where it stopped). ***"
+              % time.strftime("%Y-%m-%d %H:%M"), flush=True)
         with tty:
-            for attempt in range(1, attempts + 1):
-                # Every attempt texts or emails a 2FA code, so don't try while the portal is down
-                if not self.wait_for_portal():
+            while True:
+                answer = tty.readline()
+                if not answer or answer.strip().lower() in (b"q", b"quit"):
                     return False
-                print("\n*** TIS session expired.  Logging in again (attempt %d of %d) ***" % (attempt, attempts), flush=True)
+                problem = self.portal_problem()
+                if problem:
+                    print("*** TIS isn't answering right now (%s), so no code was sent.  Press Enter to try again"
+                          " (or q to stop). ***" % problem, flush=True)
+                    continue
+                print("*** Logging in again ***", flush=True)
                 subprocess.call([login], stdin=tty)
                 self.new_session()
                 if self.session_ok():
                     self.counts["relogin"] += 1
                     print("*** Logged in, resuming ***\n", flush=True)
                     return True
-                if attempt < attempts:
-                    delay = RELOGIN_DELAYS[attempt - 1]
-                    print("*** Login didn't work.  Trying again in %s (Ctrl-C to stop; rerun later to resume) ***"
-                          % minutes(delay), flush=True)
-                    time.sleep(delay)
-        return False
+                print("\a*** That login didn't work.  Press Enter to try again with a new code (or q to stop). ***",
+                      flush=True)
 
     def portal_problem(self):
         """None if the TIS portal answers at all (no login needed), else what's wrong"""
@@ -264,20 +261,6 @@ class Fetcher:
         except requests.RequestException as e:
             return type(e).__name__
         return "HTTP %d" % r.status_code if r.status_code >= 500 else None
-
-    def wait_for_portal(self):
-        """Wait (up to PORTAL_WAIT) for the TIS portal to answer.  False if it never does"""
-        give_up = time.time() + PORTAL_WAIT
-        while True:
-            problem = self.portal_problem()
-            if not problem:
-                return True
-            if time.time() >= give_up:
-                print("*** TIS is still not answering (%s).  Giving up; rerun later to resume ***" % problem, flush=True)
-                return False
-            print("*** TIS isn't answering (%s).  Checking again in %s before logging in (Ctrl-C to stop) ***"
-                  % (problem, minutes(PORTAL_CHECK)), flush=True)
-            time.sleep(PORTAL_CHECK)
 
     # ---- URLs and files -------------------------------------------------------------------------
 
@@ -300,8 +283,11 @@ class Fetcher:
     def write_file(self, path, data):
         f = self.local_file(path)
         os.makedirs(os.path.dirname(f), exist_ok=True)
+        # On disk before the MANIFEST says OK, so even a power cut can't leave an OK file that's empty or cut short
         with open(f + ".part", "wb") as fh:
             fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
         os.replace(f + ".part", f)
 
     def children(self, url, path, data, content_type=""):
@@ -421,16 +407,20 @@ class Fetcher:
                 seen.add(t[1])
                 queue.append(t)
 
-        if not self.session_ok() and not self.relogin():
-            print("Not logged in to TIS.  Run %s/tis-login.sh and try again." % self.cfg["SCRIPT_BASE"])
-            return EXIT_SESSION
-
+        checked = False
         while queue:
             url, path = queue.popleft()
             if self.status.get(path) in DONE:
                 self.counts["skipped"] += 1
                 kids = self.local_children(url, path) if self.args.requisites else []
             else:
+                # Check the session before the first download (not before skipping files already done, so a
+                # finished list needs no login)
+                if not checked:
+                    checked = True
+                    if not self.session_ok() and not self.relogin():
+                        print("Not logged in to TIS.  Run %s/tis-login.sh and try again." % self.cfg["SCRIPT_BASE"])
+                        return EXIT_SESSION
                 try:
                     kids = self.fetch(url, path)
                 except SessionDead:

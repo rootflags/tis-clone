@@ -18,7 +18,7 @@ foreach my $TOC_HTML (sort(`find $FSM_URLBASE -name toc.html`)) {
 }
 
 # Add indexes for the wiring diagrams
-foreach my $DOC (sort(`find $FSM_URLBASE/t3Portal/external/en/ewdappu -name termdata.xml`)) {
+foreach my $DOC (sort(`find $FSM_URLBASE/t3Portal/external/en/ewdappu -name termdata.xml 2>/dev/null`)) {
 	my $TITLE;
 	chomp($DOC);
 	open (FH, "<", $DOC) or next;

@@ -21,6 +21,7 @@
 #   tis-verify.py [FOLDER]           report
 #   tis-verify.py --fix [FOLDER]     report and update the MANIFEST
 #   tis-verify.py -v [FOLDER]        list every bad file, not just the first few per folder
+#   tis-verify.py --last N [--fix]   only the last N files downloaded (tis-clone --resume uses this)
 #
 # Exit status: 0 everything looks fine, 1 bad or missing files found.
 #
@@ -93,6 +94,43 @@ def manifest_status(path):
     return status
 
 
+def check_last(manifest, status, root, count, fix):
+    """Check the files most recently recorded OK, in case the computer stopped while writing them"""
+    recent = []
+    if os.path.exists(manifest):
+        with open(manifest, encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("OK\t"):
+                    recent.append(line.split("\t")[1])
+    last = []
+    for p in reversed(recent):
+        if p not in last and status.get(p) == "OK":
+            last.append(p)
+            if len(last) == count:
+                break
+    bad = {}
+    for p in last:
+        f = os.path.join(root, p.lstrip("/"))
+        if p.endswith("/"):
+            f = os.path.join(f, "index.html")
+        try:
+            why = problem(f, os.path.getsize(f))
+        except OSError:
+            why = "missing"
+        if why:
+            bad[p] = why
+    print("Checked the last %d files downloaded: %s" % (len(last), "all fine" if not bad else "%d bad" % len(bad)))
+    for p, why in bad.items():
+        print("    %s  (%s)" % (p, why))
+    if bad and fix:
+        stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        with open(manifest, "a", encoding="utf-8") as fh:
+            for p, why in bad.items():
+                fh.write("FAILED\t%s\t0\t%s\ttis-verify: %s\n" % (p, stamp, why))
+        print("Marked them FAILED, so they're downloaded again.")
+    return 1 if bad else 0
+
+
 def group(path):
     """Folder to report a path under: the manual (ie: /t3Portal/document/rm/RM27J0U) or its parent folder"""
     parts = path.split("/")
@@ -108,6 +146,8 @@ def main():
                     help="mark bad files FAILED and unknown good files OK in the MANIFEST, so a rerun fetches only what's needed")
     ap.add_argument("--manifest", help="manifest file (default $DOWNLOAD_TO/MANIFEST)")
     ap.add_argument("-v", "--verbose", action="store_true", help="list every bad file")
+    ap.add_argument("--last", type=int, metavar="N",
+                    help="only check the last N files the MANIFEST lists as OK (what a run was doing when it stopped)")
     args = ap.parse_args()
 
     cfg = load_cfg()
@@ -118,6 +158,9 @@ def main():
         sys.exit("%s is not inside FSM_URLBASE (%s)" % (top, root))
     manifest = args.manifest or os.path.join(cfg["DOWNLOAD_TO"], "MANIFEST")
     status = manifest_status(manifest)
+
+    if args.last:
+        return check_last(manifest, status, root, args.last, args.fix)
 
     print("Checking files under %s ..." % top, flush=True)
     bad = collections.OrderedDict()
