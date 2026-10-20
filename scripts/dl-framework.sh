@@ -39,6 +39,8 @@ cp -a ${BASE}/website-framework/* ${FSM_URLBASE}/
 		french_available en_unavailable es_unavailable fr_unavailable; do
 		echo /t3Portal/resources/images/language/en/${F}.png
 	done
+	# The TIS stylesheet; its images include the header bar that build-index.pl and build-pdfidx.sh use
+	echo /t3Portal/framework/skins/t3/css/all-t3.css
 	echo /favicon.ico
 	for F in stylegraphics/clear.gif stylegraphics/header-left.gif stylegraphics/header-right.gif \
 		resources/jsp/images/clear.gif resources/jsp/siviewer/icons/tis.png; do
