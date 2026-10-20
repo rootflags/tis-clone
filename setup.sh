@@ -4,32 +4,25 @@
 #
 
 
-echo -n "Loading tis-clone.cfg defaults "
+FOLDER=`dirname $0`
 if [ -f ${HOME}/.tis/tis-clone.cfg ]; then
-	echo "from $HOME/.tis/tis-clone.cfg"
-	. ${HOME}/.tis/tis-clone.cfg
+	CFG=${HOME}/.tis/tis-clone.cfg
 else 
-	FOLDER=`dirname $0`
-	echo "from $FOLDER/tis-clone.cfg "
-	. ./$FOLDER/tis-clone.cfg
+	CFG=$FOLDER/tis-clone.cfg
 fi
+. $CFG
+. $FOLDER/scripts/tis-log.sh
+echo "Loaded tis-clone.cfg defaults from $CFG"
 
 echo "Checking dependencies..."
 # Confirm we have all the basic packages required
-for cmd in cat cp cut diff find grep head ls mkdir mv rm rmdir sed sort wget gs pdfinfo pdfseparate pdftk rsync wkhtmltopdf; do
+for cmd in bash cat cp curl cut diff find grep gzip head ls mkdir mv perl python3 rm rmdir sed sort xargs gs pdfinfo pdfseparate pdftk rsync wkhtmltopdf; do
 	which $cmd > /dev/null 2>&1
 	if [ $? != 0 ]; then
 		echo "** $cmd not found"
 		exit 1
 	fi
 done
-
-# Check for SSL support in wget
-`which wget` --version|grep ssl > /dev/null 2>&1
-if [ $? != 0 ]; then
-	echo "** wget missing SSL support"
-	exit 1
-fi
 
 # Check for necessary perl modules
 for module in Cwd Data::Dumper Getopt::Long List::MoreUtils Switch XML::Simple; do
@@ -40,6 +33,12 @@ for module in Cwd Data::Dumper Getopt::Long List::MoreUtils Switch XML::Simple; 
 	fi
 done
 
+# The downloader, tis-fetch.py, needs the Python requests module
+python3 -c "import requests" > /dev/null 2>&1
+if [ $? != 0 ]; then
+	echo "** Python module requests not found (apt install python3-requests)"
+	exit 1
+fi
 
 echo "Creating folders..."
 mkdir -p $TISTMPDIR
@@ -56,5 +55,5 @@ else
 	echo "Creating a default $CONFIG_DIR/tis-clone.cfg file"
 	# Give this install its own siid (see SIID in tis-clone.cfg and issue #11)
 	SIID=1`LC_ALL=C tr -dc 0-9 < /dev/urandom | head -c 12`
-	sed -e "s/^SIID=.*/SIID=${SIID}/" tis-clone.cfg > $CONFIG_DIR/tis-clone.cfg
+	sed -e "s/^SIID=.*/SIID=${SIID}/" $FOLDER/tis-clone.cfg > $CONFIG_DIR/tis-clone.cfg
 fi

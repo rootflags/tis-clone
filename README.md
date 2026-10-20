@@ -8,7 +8,9 @@ This package contains scripts and instructions for you to download your own copy
 This has been tested on Ubuntu Linux 20.04 LTS but should work on most Linux systems.  It may also function under Cygwin and MacOS but has not been tested.  The following are the base Linux OS requirements:
 * /bin/sh (tested with bash)
 * Numerous commands which should be part of your Linux distribution: cat, cp, cut, diff, find, grep, head, ls, mkdir, mv, rm, rmdir, sed, sort.  There are likely a few other basic commands I've missed
-* wget with SSL support.  "apt install wget".
+* curl (used by tis-login.sh).  "apt install curl".
+* bash (tis-login.sh), gzip and xargs.
+* Python 3 (tis-login.sh, tis-serve.py) with the requests module for the downloader, tis-fetch.py.  "apt install python3 python3-requests".
 
 A recent version of Perl 5 is required.  You will need the following modules:
 * Cwd (Included in the Ubuntu libperl5.30 package)

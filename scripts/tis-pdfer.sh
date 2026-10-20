@@ -8,6 +8,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
+. ${SCRIPT_BASE}/tis-log.sh
 
 OPTIONS="--keep-relative-links"
 

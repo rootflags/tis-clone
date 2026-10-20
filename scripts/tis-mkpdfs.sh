@@ -4,6 +4,7 @@
 #
 
 . ${HOME}/.tis/tis-clone.cfg
+. ${SCRIPT_BASE}/tis-log.sh
 
 GS="gs -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dNOPAUSE -dQUIET -dBATCH"
 
