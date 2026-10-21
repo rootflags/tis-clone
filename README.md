@@ -10,15 +10,7 @@ This has been tested on Ubuntu Linux 20.04 LTS but should work on most Linux sys
 * Numerous commands which should be part of your Linux distribution: cat, cp, cut, diff, find, grep, head, ls, mkdir, mv, rm, rmdir, sed, sort.  There are likely a few other basic commands I've missed
 * curl (used by tis-login.sh).  "apt install curl".
 * bash (tis-login.sh), gzip and xargs.
-* Python 3 (tis-login.sh, tis-serve.py) with the requests module for the downloader, tis-fetch.py.  "apt install python3 python3-requests".
-
-A recent version of Perl 5 is required.  You will need the following modules:
-* Cwd (Included in the Ubuntu libperl5.30 package)
-* Data::Dumper (Included in the Ubuntu libperl5.30 package)
-* Getopt::Long (Included in the Ubuntu libperl5.30 package)
-* List::MoreUtils (On Ubuntu: apt install liblist-moreutils-perl)
-* Switch (On Ubuntu: apt install libswitch-perl)
-* XML::Simple (On Ubuntu: apt install libxml-simple-perl)
+* Python 3 (tis-login.sh, tis-serve.py and the other tools) with the requests module for the downloader, tis-fetch.py.  "apt install python3 python3-requests".  Perl is no longer needed.
 
 Other Ubuntu packages which need to be installed:
 * Ghostscript (if you want to create PDFs: apt install ghostscript)
