@@ -122,8 +122,13 @@ class RefSearch:
                 if not f.relogin():
                     sys.exit(tis_fetch.EXIT_SESSION)
 
-    def vehicles(self, dataset, division):
-        text = self.retrying(self.request, "GET", VEHICLES % (dataset, urllib.parse.quote(division)))
+    def vehicles(self, dataset, key, division=None):
+        """TIS's lists for the vehicle dropdowns: dataset "model" (key: division), "yearreverse" (key: division,
+        every year) or "year" (key: model, also give its division)"""
+        path = VEHICLES % (dataset, urllib.parse.quote(key))
+        if division:
+            path += "&division=" + urllib.parse.quote(division)
+        text = self.retrying(self.request, "GET", path)
         return [v for v, label in KEYS_RE.findall(text) if v != "ALL"]
 
     def search(self, division, model, year, group):
