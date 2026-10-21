@@ -7,7 +7,9 @@ This package contains scripts and instructions for you to download your own copy
 # Requirements
 This has been tested on Ubuntu Linux 20.04 LTS but should work on most Linux systems.  It may also function under Cygwin and MacOS but has not been tested.  The following are the base Linux OS requirements:
 * /bin/sh (tested with bash)
-* Numerous commands which should be part of your Linux distribution: cat, cp, cut, diff, find, grep, head, ls, mkdir, mv, rm, rmdir, sed, sort.  There are likely a few other basic commands I've missed
+* Numerous commands which should be part of your Linux distribution: awk, cat, cp, cut, find, grep, head, ls, mkdir, mv, rm, sed, sort, tr
+
+`./setup.sh` checks all of these and prints the command that installs whatever is missing on your system (and offers to run it).
 * curl (used by tis-login.sh).  "apt install curl".
 * bash (tis-login.sh), gzip and xargs.
 * Python 3 (tis-login.sh, tis-serve.py and the other tools) with the requests module for the downloader, tis-fetch.py.  "apt install python3 python3-requests".  Perl is no longer needed.
@@ -19,7 +21,7 @@ Other Ubuntu packages which need to be installed:
 * wkhtmltopdf, the "with patched qt" build from https://wkhtmltopdf.org/downloads.html, and pikepdf ("apt install python3-pikepdf"), if you want to create PDFs
 
 # Instructions
-Please see the [HOWTO.md](HOWTO.md) file.  In short, after setup and logging in, `~/tis-clone/tis-clone 30B0U` downloads everything TIS has for that identifier and builds a local website you can browse with `~/tis-clone/scripts/tis-serve.py`.
+Please see the [HOWTO.md](HOWTO.md) file.  In short, after setup and logging in, `~/tis-clone/tis-clone` asks for the make, model and year, downloads everything TIS has for that vehicle (or give it an identifier, ie: `~/tis-clone/tis-clone 30B0U`) and builds a local website you can browse with `~/tis-clone/scripts/tis-serve.py`.
 
 # License
 This tool is freely licensed under the GPL.  If you paid for it, go ask for your money back.  You may download this tool and modify it, however any modifications must also be published and freely licensed under the GPL for others to use. 
