@@ -48,6 +48,12 @@
 
   It reruns your last command (saved in `$DOWNLOAD_TO/tis-clone.resume`), skips the manuals and PDFs that already finished, and continues the rest without downloading files again.  It only asks you to log in once there's something left to download.  It also rechecks the last files downloaded before the stop, in case the computer went down while saving them, and downloads any bad ones again.
 
+  **If a file fails every time** (TIS sometimes sends an image back empty, so `--resume` stops at the same file again and never builds the website), use:
+
+         ~/tis-clone/tis-clone --continue
+
+  It's `--resume`, except that files which failed before aren't tried again, and if a step still fails it carries on and builds the website and PDFs anyway.  `tis-report.py` lists what's missing.
+
   The rest of steps 5 to 9 describe what it runs, if you'd rather do it by hand.
 * cd into the download folder and run the downloader for each manual type, using the identifier above:
 
@@ -117,7 +123,7 @@ The best way around this problem is to set up a local webserver.  One you have y
 All scripts are in `~/tis-clone/scripts` and read their settings from `~/.tis/tis-clone.cfg`.  Run the downloaders from `$DOWNLOAD_TO`.  Except for the ones that print a web page (`build-index.py`, `build-pdfidx.sh`, `toc2html.py` and `toc2topic.py`), every script also appends its output to `$DOWNLOAD_TO/tis-clone.log` (see step 5); `tis-log.sh` and `tislog.py` are the shared code that does this.
 
 Everything at once
-* `~/tis-clone/tis-clone [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-pdf]` - without a CODE, ask for the make, model and year and look the codes up (tis-lookup.py); find which manuals TIS has, download them, the Reference Information (with `--ref`, which the lookup adds) and the framework, then (if nothing failed) run tis-urlstripper.sh, build-index.py and the PDF scripts (step 5).  `tis-clone --resume` carries on with the last command where it stopped.
+* `~/tis-clone/tis-clone [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-pdf]` - without a CODE, ask for the make, model and year and look the codes up (tis-lookup.py); find which manuals TIS has, download them, the Reference Information (with `--ref`, which the lookup adds) and the framework, then (if nothing failed) run tis-urlstripper.sh, build-index.py and the PDF scripts (step 5).  `tis-clone --resume` carries on with the last command where it stopped.  `tis-clone --continue` does the same without retrying files that failed before, and builds the website and PDFs even if a download failed.
 
 Logging in
 * `tis-login.sh [-u USERNAME] [-p PASSWORD] [-m 0|1]` - log in to TIS (with 2FA) and save the session in ~/.tis/cookies.txt.  Defaults come from TIS_USERNAME, TIS_PASSWORD and TIS_MFA in tis-clone.cfg.

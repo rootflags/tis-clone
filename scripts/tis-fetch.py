@@ -13,7 +13,8 @@
 # Progress is kept in a plain-text MANIFEST (default: $DOWNLOAD_TO/MANIFEST), one line per URL path:
 #     STATUS <tab> /t3Portal/path <tab> bytes <tab> time <tab> note
 # STATUS is OK, MISSING (404), FORBIDDEN (403 while the session was fine) or FAILED.  The last line
-# for a path wins.  OK, MISSING and FORBIDDEN paths are skipped on later runs; FAILED ones are retried.
+# for a path wins.  OK, MISSING and FORBIDDEN paths are skipped on later runs; FAILED ones are retried,
+# unless TIS_SKIP_FAILED=1 is set (tis-clone --continue sets it, to get past files TIS can't send).
 # Delete a path's lines (or the whole file) to force a refetch.
 #
 # Usage:
@@ -139,6 +140,7 @@ class Fetcher:
         self.http = None
         self.new_session()
         self.counts = collections.Counter()
+        self.skip_failed = os.environ.get("TIS_SKIP_FAILED") == "1"
         self.failed = []
         self.since_cookie_save = 0
 
@@ -424,8 +426,10 @@ class Fetcher:
         checked = False
         while queue:
             url, path = queue.popleft()
-            if self.status.get(path) in DONE:
+            if self.status.get(path) in DONE or (self.skip_failed and self.status.get(path) == "FAILED"):
                 self.counts["skipped"] += 1
+                if self.status.get(path) == "FAILED":
+                    self.counts["not retried"] += 1
                 kids = self.local_children(url, path) if self.args.requisites else []
             else:
                 # Check the session before the first download (not before skipping files already done, so a
@@ -464,6 +468,8 @@ class Fetcher:
             self.counts["skipped"], self.counts["relogin"], self.manifest_path))
         for path in self.failed:
             print("  FAILED " + path)
+        if self.counts["not retried"]:
+            print("  (%d that FAILED before not retried, as asked by TIS_SKIP_FAILED=1)" % self.counts["not retried"])
 
 
 def main():

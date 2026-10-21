@@ -12,7 +12,9 @@
 # "tis-clone --resume" runs the last command again, skipping finished steps (it needs no login until there
 # is something left to download) and first rechecking the last files downloaded in case the computer
 # stopped while writing them.  Every download also skips files already in the MANIFEST, so rerunning the
-# same command (without --resume) also carries on, it just checks every manual again.
+# same command (without --resume) also carries on, it just checks every manual again.  "tis-clone --continue"
+# is --resume without retrying files that FAILED before (ie: an image TIS sends back empty every time): it
+# carries on with the next file and, if a step still fails, goes on to the website and PDFs anyway.
 #
 
 . ${HOME}/.tis/tis-clone.cfg
@@ -24,7 +26,7 @@ trap 'echo ""; echo "Interrupted.  Run $0 --resume to carry on where it stopped.
 usage() {
 	echo "Syntax: $0 [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-sb] [--no-frm] [--no-pdf]"
 	echo "        $0                        ask for the make, model and year, and download everything for it"
-	echo "        $0 --resume"
+	echo "        $0 --resume | --continue"
 	echo "    ie: $0 30B0U                  everything TIS has for 30B0U"
 	echo "        $0 23C0U --bm 18M0U       23C0U, except the body/collision manual from 18M0U"
 	echo "        $0 --rm 30B0U --bm 30B0U  only the repair and body/collision manuals"
@@ -43,6 +45,8 @@ usage() {
 	echo "           the Flat Rate Manual (labor times; unless --no-frm) for those years."
 	echo "  --no-pdf don't make PDFs after downloading (they take a long time, and the website doesn't need them)"
 	echo "  --resume carry on with the last command where it stopped (after Ctrl-C, a reboot or a failed login)"
+	echo "  --continue  like --resume, but don't retry files that failed before, and build the website and PDFs"
+	echo "           even if some downloads failed (for files TIS can't send; tis-report.py lists them)"
 	echo ""
 	echo "Sections TIS doesn't have for CODE are skipped.  Run from anywhere; files go to ${DOWNLOAD_TO}."
 }
@@ -67,9 +71,11 @@ fi
 
 STATE=${DOWNLOAD_TO}/tis-clone.resume
 RESUME=0
-if [ "x$1" = x--resume ]; then
+CONTINUE=0
+RERUN="$0 --resume"
+if [ "x$1" = x--resume ] || [ "x$1" = x--continue ]; then
 	if [ $# != 1 ]; then
-		echo "--resume reruns the last command, so it takes no other options"; exit 1
+		echo "$1 reruns the last command, so it takes no other options"; exit 1
 	fi
 	ARGS=`sed -n 's/^ARGS //p' ${STATE} 2>/dev/null`
 	if [ "x${ARGS}" = x ]; then
@@ -80,13 +86,20 @@ if [ "x$1" = x--resume ]; then
 	fi
 	echo "Resuming: $0 ${ARGS}"
 	RESUME=1
+	if [ "x$1" = x--continue ]; then
+		# tis-fetch.py skips the files that FAILED before instead of retrying them
+		echo "(not retrying files that failed before)"
+		CONTINUE=1
+		RERUN="$0 --continue"
+		TIS_SKIP_FAILED=1
+		export TIS_SKIP_FAILED
+	fi
 	set -- ${ARGS}
 fi
 done_before() {
 	[ ${RESUME} = 1 ] && grep -qx "DONE $1" ${STATE}
 }
 
-RERUN="$0 --resume"
 CODE=""
 RM=""
 EWD=""
@@ -193,7 +206,7 @@ TODO=`sed -n 's/^TODO //p' ${STATE}`
 if [ ${RESUME} = 1 ] && [ "x${TODO}" != x ]; then
 	# Same manuals as last time, so no need to ask TIS (or log in) again
 	sed -n 's/^NOTFOUND /    ** /p' ${STATE}
-	grep -q '^NOTFOUND' ${STATE} && FAILED=1
+	grep -q '^NOTFOUND' ${STATE} && [ ${CONTINUE} = 0 ] && FAILED=1
 else
 	## Find out which manuals TIS has (one login check for all of them)
 	echo "Checking which manuals TIS has..."
@@ -265,6 +278,7 @@ fi
 
 ## Download each manual, then the shared website framework
 CODES=""
+SKIPPED=""
 for T in ${TODO} dl-framework.sh:; do
 	SCRIPT=${T%%:*}
 	C=${T#*:}
@@ -291,15 +305,28 @@ for T in ${TODO} dl-framework.sh:; do
 	fi
 	if [ $RC = 0 ]; then
 		echo "DONE ${T}" >> ${STATE}
+	elif [ ${CONTINUE} = 1 ]; then
+		SKIPPED="${SKIPPED} ${SCRIPT}${C:+ ${C}}"
 	else
 		FAILED=1
 	fi
 done
+if [ "x${SKIPPED}" != x ]; then
+	echo ""
+	echo "Carrying on (--continue) although these didn't finish:${SKIPPED}.  ${SCRIPT_BASE}/tis-report.py shows what failed."
+fi
 
 if [ ${FAILED} != 0 ]; then
 	echo ""
 	echo "Some downloads didn't finish.  ${SCRIPT_BASE}/tis-report.py shows what and why; rerun ${RERUN} to retry."
 	echo "The website clean-up and PDFs run once everything has downloaded."
+	# Files whose last MANIFEST line is FAILED, out of all the files downloaded
+	if [ -f ${DOWNLOAD_TO}/MANIFEST ]; then
+		awk -F'\t' '!/^#/ && NF > 1 { s[$2] = $1 } END { for (p in s) { n++; if (s[p] == "FAILED") f++ }
+			if (f) printf "%d of the %d files downloaded failed.\n", f, n }' ${DOWNLOAD_TO}/MANIFEST
+	fi
+	echo "If it keeps failing on the same files (ie: TIS sends them back empty) and you can do without them, run"
+	echo "$0 --continue: it doesn't retry them and builds the website and PDFs anyway."
 	exit 1
 fi
 
@@ -343,5 +370,7 @@ fi
 
 echo ""
 echo "Done.  To browse it: ${SCRIPT_BASE}/tis-serve.py"
+# Not FINISHED, so a later --resume still retries what --continue went past
+[ "x${SKIPPED}" != x ] && FAILED=1
 [ ${FAILED} = 0 ] && echo "FINISHED `date '+%Y-%m-%d %H:%M:%S'`" >> ${STATE}
 exit ${FAILED}
