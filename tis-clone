@@ -3,7 +3,8 @@
 # Download a vehicle's whole FSM and turn it into a working local website, in one command
 #
 # Finds which manuals TIS has for the code(s), downloads each with the matching dl-*.sh script and the
-# vehicle's Reference Information (owner's manuals, ...; dl-ref.sh), downloads the shared website framework
+# vehicle's Reference Information (owner's manuals, ...; dl-ref.sh) and Flat Rate Manual (labor times;
+# tis-frm.py), downloads the shared website framework
 # and then, if nothing failed, cleans up the links, builds the front page and makes the PDFs.  Without a code
 # it asks for the make, model and year (tis-lookup.py) and works out the codes itself.
 #
@@ -21,7 +22,7 @@
 trap 'echo ""; echo "Interrupted.  Run $0 --resume to carry on where it stopped."; exit 130' INT
 
 usage() {
-	echo "Syntax: $0 [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-pdf]"
+	echo "Syntax: $0 [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-frm] [--no-pdf]"
 	echo "        $0                        ask for the make, model and year, and download everything for it"
 	echo "        $0 --resume"
 	echo "    ie: $0 30B0U                  everything TIS has for 30B0U"
@@ -38,6 +39,7 @@ usage() {
 	echo "           older Flat Rate Manual and other Reference Information, ie: --ref LEXUS:LX600:2024"
 	echo "           (write a space in the model as _, ie: TOYOTA:Land_Cruiser:2013).  On unless --no-ref"
 	echo "           when the vehicle was looked up; tis-lookup.py prints the --ref for a vehicle."
+	echo "           It also saves the Flat Rate Manual (labor times) for those years, unless --no-frm."
 	echo "  --no-pdf don't make PDFs after downloading (they take a long time, and the website doesn't need them)"
 	echo "  --resume carry on with the last command where it stopped (after Ctrl-C, a reboot or a failed login)"
 	echo ""
@@ -91,6 +93,7 @@ BM=""
 NM=""
 REF=""
 NOREF=0
+NOFRM=0
 PDF=1
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -116,6 +119,7 @@ while [ $# -gt 0 ]; do
 			fi
 			shift 2 ;;
 		--no-ref) NOREF=1; shift ;;
+		--no-frm) NOFRM=1; shift ;;
 		--no-pdf) PDF=0; shift ;;
 		-h|--help) usage; exit 0 ;;
 		-*) echo "Unknown option $1"; echo; usage; exit 1 ;;
@@ -134,6 +138,7 @@ done
 # Saved for --resume, which splits it on spaces again
 ARGS="${CODE}${RM:+ --rm ${RM}}${EWD:+ --ewd ${EWD}}${BM:+ --bm ${BM}}${NM:+ --nm ${NM}}${REF:+ --ref ${REF}}"
 [ ${NOREF} = 1 ] && ARGS="${ARGS} --no-ref"
+[ ${NOFRM} = 1 ] && ARGS="${ARGS} --no-frm"
 [ ${PDF} = 0 ] && ARGS="${ARGS} --no-pdf"
 ARGS=`echo ${ARGS}`
 
@@ -240,6 +245,7 @@ else
 	fi
 	if [ x${REF} != x ]; then
 		TODO="${TODO} dl-ref.sh:${REF}"
+		[ ${NOFRM} = 0 ] && TODO="${TODO} tis-frm.py:${REF}"
 	elif [ ${NOREF} = 0 ]; then
 		echo "    (to also get the owner's manuals and other Reference Information, add --ref MAKE:MODEL:YEAR;"
 		echo "     ${SCRIPT_BASE}/tis-lookup.py prints it for a vehicle)"
@@ -257,16 +263,16 @@ CODES=""
 for T in ${TODO} dl-framework.sh:; do
 	SCRIPT=${T%%:*}
 	C=${T#*:}
-	[ ${SCRIPT} = dl-ref.sh ] || case " ${CODES} " in *" ${C} "*) ;; *) [ x${C} != x ] && CODES="${CODES} ${C}" ;; esac
+	case ${SCRIPT} in dl-ref.sh|tis-frm.py) ;; *) case " ${CODES} " in *" ${C} "*) ;; *) [ x${C} != x ] && CODES="${CODES} ${C}" ;; esac ;; esac
 	echo ""
 	if done_before ${T}; then
 		echo "########## ${SCRIPT} ${C}: finished last time, skipping"
 		continue
 	fi
 	echo "########## ${SCRIPT} ${C}"
-	if [ ${SCRIPT} = dl-ref.sh ]; then
+	if [ ${SCRIPT} = dl-ref.sh ] || [ ${SCRIPT} = tis-frm.py ]; then
 		# MAKE:MODEL:YEAR, the model with _ for spaces
-		${SCRIPT_BASE}/dl-ref.sh "${C%%:*}" "`echo ${C} | cut -d: -f2 | tr _ ' '`" "${C##*:}"
+		${SCRIPT_BASE}/${SCRIPT} "${C%%:*}" "`echo ${C} | cut -d: -f2 | tr _ ' '`" "${C##*:}"
 	else
 		${SCRIPT_BASE}/${SCRIPT} ${C}
 	fi
@@ -312,6 +318,16 @@ if [ ${PDF} = 1 ]; then
 			FAILED=1
 		fi
 	done
+	# The Flat Rate Manual, made from the pages tis-frm.py saved
+	case " ${TODO} " in *" tis-frm.py:${REF} "*)
+		if done_before pdf:frm; then
+			echo "Flat Rate Manual PDF: finished last time, skipping"
+		elif ${SCRIPT_BASE}/tis-frm.py --pdf "${REF%%:*}" "`echo ${REF} | cut -d: -f2 | tr _ ' '`" "${REF##*:}"; then
+			echo "DONE pdf:frm" >> ${STATE}
+		else
+			FAILED=1
+		fi ;;
+	esac
 	if [ -d ${FSM_URLBASE}/PDFs ]; then
 		${SCRIPT_BASE}/build-pdfidx.sh > ${FSM_URLBASE}/PDFs/index.html
 		# The front page links the PDF index once it exists

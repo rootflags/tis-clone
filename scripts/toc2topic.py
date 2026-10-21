@@ -22,7 +22,7 @@ def main():
     except (OSError, ET.ParseError) as e:
         sys.exit("%s: can't read %s: %s" % (sys.argv[0], sys.argv[1], e))
     topic = root.findtext("name") or root.findtext("pubtitle") or ""
-    print(re.sub(r" (Body|Collision|Repair|New Car|Electrical).*$", "", topic))
+    print(re.sub(r" (Body|Collision|Repair|New Car|Electrical|Flat Rate).*$", "", topic))
 
 
 if __name__ == "__main__":
