@@ -2,9 +2,10 @@
 #
 # Download a vehicle's whole FSM and turn it into a working local website, in one command
 #
-# Finds which manuals TIS has for the code(s), downloads each with the matching dl-*.sh script, downloads
-# the shared website framework and then, if nothing failed, cleans up the links, builds the front page and
-# makes the PDFs.
+# Finds which manuals TIS has for the code(s), downloads each with the matching dl-*.sh script and the
+# vehicle's Reference Information (owner's manuals, ...; dl-ref.sh), downloads the shared website framework
+# and then, if nothing failed, cleans up the links, builds the front page and makes the PDFs.  Without a code
+# it asks for the make, model and year (tis-lookup.py) and works out the codes itself.
 #
 # Each run saves the command, the manuals it found and each step it finishes in $DOWNLOAD_TO/tis-clone.resume.
 # "tis-clone --resume" runs the last command again, skipping finished steps (it needs no login until there
@@ -20,7 +21,8 @@
 trap 'echo ""; echo "Interrupted.  Run $0 --resume to carry on where it stopped."; exit 130' INT
 
 usage() {
-	echo "Syntax: $0 [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--no-pdf]"
+	echo "Syntax: $0 [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-pdf]"
+	echo "        $0                        ask for the make, model and year, and download everything for it"
 	echo "        $0 --resume"
 	echo "    ie: $0 30B0U                  everything TIS has for 30B0U"
 	echo "        $0 23C0U --bm 18M0U       23C0U, except the body/collision manual from 18M0U"
@@ -32,11 +34,33 @@ usage() {
 	echo "  --ewd    Electrical Wiring Diagrams (EM, EWD or WD)"
 	echo "  --bm     Body/Collision Repair (BM, CR or BR)"
 	echo "  --nm     New Car Features (NM or NCF)"
+	echo "  --ref    also download the vehicle's owner's, navigation and accessory manuals, maintenance guide,"
+	echo "           older Flat Rate Manual and other Reference Information, ie: --ref LEXUS:LX600:2024"
+	echo "           (write a space in the model as _, ie: TOYOTA:Land_Cruiser:2013).  On unless --no-ref"
+	echo "           when the vehicle was looked up; tis-lookup.py prints the --ref for a vehicle."
 	echo "  --no-pdf don't make PDFs after downloading (they take a long time, and the website doesn't need them)"
 	echo "  --resume carry on with the last command where it stopped (after Ctrl-C, a reboot or a failed login)"
 	echo ""
 	echo "Sections TIS doesn't have for CODE are skipped.  Run from anywhere; files go to ${DOWNLOAD_TO}."
 }
+
+# No code: ask for the vehicle and look its codes up (tis-lookup.py prints the arguments, ie:
+# "23C0U --bm 18M0U --ref TOYOTA:Prius_V:2013"; its questions go to stderr)
+if [ $# = 0 ]; then
+	if [ ! -t 0 ]; then
+		usage; exit 1
+	fi
+	echo "Which vehicle?  (Or give its code: $0 --help)"
+	LOOKUP=`${SCRIPT_BASE}/tis-lookup.py --args`
+	RC=$?
+	if [ $RC != 0 ] || [ "x${LOOKUP}" = x ]; then
+		[ $RC = 75 ] && exit 75
+		exit 1
+	fi
+	echo ""
+	echo "Downloading: $0 ${LOOKUP}"
+	set -- ${LOOKUP}
+fi
 
 STATE=${DOWNLOAD_TO}/tis-clone.resume
 RESUME=0
@@ -59,13 +83,14 @@ done_before() {
 	[ ${RESUME} = 1 ] && grep -qx "DONE $1" ${STATE}
 }
 
-ARGS="$*"
 RERUN="$0 --resume"
 CODE=""
 RM=""
 EWD=""
 BM=""
 NM=""
+REF=""
+NOREF=0
 PDF=1
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -83,6 +108,14 @@ while [ $# -gt 0 ]; do
 				--nm) NM=$2 ;;
 			esac
 			shift 2 ;;
+		--ref)
+			# MAKE:MODEL:YEAR, with spaces in the model as _ (a space works too, if quoted)
+			REF=`echo "$2" | tr ' ' _`
+			if [ `expr "x${REF}" : 'x[A-Za-z]*:[^:]*:[0-9][0-9,-]*$'` = 0 ]; then
+				echo "--ref needs MAKE:MODEL:YEAR, ie: --ref LEXUS:LX600:2024 or --ref TOYOTA:Land_Cruiser:2013"; exit 1
+			fi
+			shift 2 ;;
+		--no-ref) NOREF=1; shift ;;
 		--no-pdf) PDF=0; shift ;;
 		-h|--help) usage; exit 0 ;;
 		-*) echo "Unknown option $1"; echo; usage; exit 1 ;;
@@ -96,6 +129,13 @@ while [ $# -gt 0 ]; do
 			CODE=$1; shift ;;
 	esac
 done
+
+[ ${NOREF} = 1 ] && REF=""
+# Saved for --resume, which splits it on spaces again
+ARGS="${CODE}${RM:+ --rm ${RM}}${EWD:+ --ewd ${EWD}}${BM:+ --bm ${BM}}${NM:+ --nm ${NM}}${REF:+ --ref ${REF}}"
+[ ${NOREF} = 1 ] && ARGS="${ARGS} --no-ref"
+[ ${PDF} = 0 ] && ARGS="${ARGS} --no-pdf"
+ARGS=`echo ${ARGS}`
 
 # Sections asked for by name must exist; the rest come from CODE and are skipped if TIS doesn't have them
 ASKED="${RM:+rm }${EWD:+ewd }${BM:+bm }${NM:+nm}"
@@ -160,6 +200,7 @@ else
 
 	TODO=""
 	FOUND=""
+	FIRSTTOC=""
 	while read -r SECTION SCRIPT C P; do
 		F=${FSM_URLBASE}${P}
 		if [ -f ${F} ] && { [ ${SCRIPT} = dl-html-ewd.sh ] || grep -q "href=.*xhtml" ${F}; }; then
@@ -167,6 +208,7 @@ else
 			case " ${TODO} " in *" ${SCRIPT}:${C} "*) continue ;; esac
 			TODO="${TODO} ${SCRIPT}:${C}"
 			FOUND="${FOUND} ${SECTION}"
+			[ x${FIRSTTOC} = x ] && FIRSTTOC=${F}
 			echo "    found `echo ${P} | cut -d/ -f5-6`"
 		fi
 	done < ${LIST}
@@ -185,6 +227,23 @@ else
 		echo "TIS has none of the manuals asked for.  Check the code(s)."
 		exit 1
 	fi
+	# The vehicle's Reference Information.  Given a code but no --ref, the first manual found (the repair
+	# manual if there is one) says which vehicle it is; ask which model year(s) and remember the answer.
+	if [ x${REF} = x ] && [ ${NOREF} = 0 ] && [ -t 0 ] && [ x${FIRSTTOC} != x ]; then
+		REF=`${SCRIPT_BASE}/tis-lookup.py --ref-for ${FIRSTTOC}`
+		[ $? = 75 ] && exit 75
+		if [ x${REF} != x ]; then
+			ARGS="${ARGS} --ref ${REF}"
+			A="${ARGS}" awk '/^ARGS /{ print "ARGS " ENVIRON["A"]; next } { print }' ${STATE} > ${STATE}.new &&
+				mv -f ${STATE}.new ${STATE}
+		fi
+	fi
+	if [ x${REF} != x ]; then
+		TODO="${TODO} dl-ref.sh:${REF}"
+	elif [ ${NOREF} = 0 ]; then
+		echo "    (to also get the owner's manuals and other Reference Information, add --ref MAKE:MODEL:YEAR;"
+		echo "     ${SCRIPT_BASE}/tis-lookup.py prints it for a vehicle)"
+	fi
 	echo "TODO${TODO}" >> ${STATE}
 fi
 
@@ -198,14 +257,19 @@ CODES=""
 for T in ${TODO} dl-framework.sh:; do
 	SCRIPT=${T%%:*}
 	C=${T#*:}
-	case " ${CODES} " in *" ${C} "*) ;; *) [ x${C} != x ] && CODES="${CODES} ${C}" ;; esac
+	[ ${SCRIPT} = dl-ref.sh ] || case " ${CODES} " in *" ${C} "*) ;; *) [ x${C} != x ] && CODES="${CODES} ${C}" ;; esac
 	echo ""
 	if done_before ${T}; then
 		echo "########## ${SCRIPT} ${C}: finished last time, skipping"
 		continue
 	fi
 	echo "########## ${SCRIPT} ${C}"
-	${SCRIPT_BASE}/${SCRIPT} ${C}
+	if [ ${SCRIPT} = dl-ref.sh ]; then
+		# MAKE:MODEL:YEAR, the model with _ for spaces
+		${SCRIPT_BASE}/dl-ref.sh "${C%%:*}" "`echo ${C} | cut -d: -f2 | tr _ ' '`" "${C##*:}"
+	else
+		${SCRIPT_BASE}/${SCRIPT} ${C}
+	fi
 	RC=$?
 	if [ $RC = 75 ]; then
 		echo "Stopped because the TIS session expired.  When you're ready to log in, run ${RERUN} to carry on."

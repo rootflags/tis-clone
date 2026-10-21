@@ -19,7 +19,7 @@ Other Ubuntu packages which need to be installed:
 * wkhtmltopdf, the "with patched qt" build from https://wkhtmltopdf.org/downloads.html, and pikepdf ("apt install python3-pikepdf"), if you want to create PDFs
 
 # Instructions
-Please see the [HOWTO.md](HOWTO.md) file.  In short, after setup and logging in, `~/tis-clone/tis-clone 30B0U` downloads everything TIS has for that identifier and builds a local website you can browse with `~/tis-clone/scripts/tis-serve.py`.
+Please see the [HOWTO.md](HOWTO.md) file.  In short, after setup and logging in, `~/tis-clone/tis-clone` asks for the make, model and year, downloads everything TIS has for that vehicle (or give it an identifier, ie: `~/tis-clone/tis-clone 30B0U`) and builds a local website you can browse with `~/tis-clone/scripts/tis-serve.py`.
 
 # License
 This tool is freely licensed under the GPL.  If you paid for it, go ask for your money back.  You may download this tool and modify it, however any modifications must also be published and freely licensed under the GPL for others to use. 

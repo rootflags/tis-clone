@@ -17,11 +17,12 @@ if [ $# != 3 ]; then
 	echo "Syntax: $0 DIVISION MODEL YEAR"
 	echo "    ie: $0 LEXUS LX600 2024"
 	echo "        $0 TOYOTA \"Land Cruiser\" 2013-2015"
-	echo "    YEAR can be a range.  ${SCRIPT_BASE}/tis-refsearch.py --models DIVISION lists the models."
+	echo "    YEAR can be a range (2022-2024) or a list (2022,2024).  ${SCRIPT_BASE}/tis-refsearch.py --models DIVISION"
+	echo "    lists the models."
 	exit 1
 fi
 
-NAME=`echo "$1_$2_$3" | tr 'a-z /' 'A-Z__'`
+NAME=`echo "$1_$2_$3" | tr 'a-z /,' 'A-Z__+'`
 FOLDER=/t3Portal/external/en/ref/${NAME}
 mkdir -p ${FSM_URLBASE}${FOLDER}
 

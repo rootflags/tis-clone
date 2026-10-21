@@ -25,4 +25,4 @@ There are a lot of steps in the [HOWTO.md](HOWTO.md) file.
 * The first few steps to log in and make any config changes should be guided
 * It would be better if we could just prompt the user with the vehicle division/model/year like the website does and handle EVERYTHING based on that input
   * ~~A tis-lookup.py that asks for Make, Model and Year (like the TIS search page) and prints the 5-character code~~ (Done: tis-lookup.py)
-  * Next: tis-clone runs tis-lookup.py when no code is given instead of failing, and could then also run dl-ref.sh with the same make, model and year
+  * ~~tis-clone runs tis-lookup.py when no code is given instead of failing, and also runs dl-ref.sh with the same make, model and year~~ (Done)

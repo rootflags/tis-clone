@@ -19,7 +19,7 @@
 #
 # Usage:
 #   tis-refsearch.py DIVISION MODEL YEAR [-g GROUP ...]     ie: tis-refsearch.py LEXUS LX600 2024
-#       YEAR can be a range (2022-2027) or ALL.  GROUP: technician, warranty, owner, serviceops, canada
+#       YEAR can be a range (2022-2027), a list (2022,2024-2025) or ALL.  GROUP: technician, warranty, owner, serviceops, canada
 #       (default: all of them).  --tsv prints one tab separated line per document instead.
 #   tis-refsearch.py ... --toc toc.xml                      also write the toc.xml
 #   tis-refsearch.py --models DIVISION                      the models TIS knows, ie: LX600, LAND CRUISER
@@ -194,10 +194,13 @@ def result(link, title):
 
 
 def years_of(spec):
-    m = re.match(r"^(\d{4})-(\d{4})$", spec)
-    if m:
-        return [str(y) for y in range(int(m.group(1)), int(m.group(2)) + 1)]
-    return [spec]
+    """The years in 2024, 2022-2027, 2022,2024-2025 or ALL (which TIS searches as one)"""
+    years = []
+    for part in spec.split(","):
+        m = re.match(r"^(\d{4})-(\d{4})$", part.strip())
+        found = [str(y) for y in range(int(m.group(1)), int(m.group(2)) + 1)] if m else [part.strip()]
+        years += [y for y in found if y and y not in years]
+    return years
 
 
 def section(r):
@@ -235,7 +238,7 @@ def write_toc(path, title, found, search):
 
 def main():
     ap = argparse.ArgumentParser(description="Search TIS's Reference Information for a vehicle")
-    ap.add_argument("vehicle", nargs="*", metavar="DIVISION MODEL YEAR", help="ie: LEXUS LX600 2024 (YEAR: 2024, 2022-2027 or ALL)")
+    ap.add_argument("vehicle", nargs="*", metavar="DIVISION MODEL YEAR", help="ie: LEXUS LX600 2024 (YEAR: 2024, 2022-2027, 2022,2024 or ALL)")
     ap.add_argument("-g", "--group", action="append", choices=list(GROUPS), help="document group (default: all)")
     ap.add_argument("--tsv", action="store_true", help="one tab separated line per document: group, type, publication, path, title")
     ap.add_argument("--toc", metavar="FILE", help="write a toc.xml of the documents that don't have their own")

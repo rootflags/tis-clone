@@ -27,9 +27,14 @@
 
 5. Downloading:
 * Files go to the $DOWNLOAD_TO folder in ~/.tis/tis-clone.cfg.  To download another vehicle into its own folder, rerun setup.sh (or edit the file) and change it first.
-* **The easy way: one command does steps 5 to 9.**  It works out which manuals TIS has for the identifier (RM, EM/EWD/WD, BM/CR/BR, NM/NCF), downloads them and the website framework, and then, if nothing failed, cleans up the links, builds the front page and makes the PDFs.  Rerun the same command to resume after an interruption or failure.
+* **The easy way: one command does steps 4 to 9.**  Run it without an identifier and it asks for the make, model and year (step 4's tis-lookup.py), works out the identifiers, works out which manuals TIS has (RM, EM/EWD/WD, BM/CR/BR, NM/NCF), downloads them, the vehicle's Reference Information (owner's, navigation and accessory manuals, maintenance guide, older Flat Rate Manual, ...; see dl-ref.sh) and the website framework, and then, if nothing failed, cleans up the links, builds the front page and makes the PDFs.  Rerun the same command to resume after an interruption or failure.
+
+         ~/tis-clone/tis-clone
+
+  If you already know the identifier you can give it instead.  tis-clone then reads which vehicle it is from the repair manual (ie: "2022-2027 LEXUS LX600 and LX700H"), asks which model (if there are several) and which model year(s) you want the Reference Information for: a year (`2024`), several (`2022,2024`), a range (`2022-2024`) or `all`, or Enter to skip it.  You can also give the answer up front with `--ref MAKE:MODEL:YEAR` (write a space in the model as `_`; tis-lookup.py prints the whole command), and `--no-ref` skips it:
 
          ~/tis-clone/tis-clone $IDENTIFIER
+         ~/tis-clone/tis-clone 18X0U --bm 0800U --ref TOYOTA:Land_Cruiser:2013
 
   When a section uses a different identifier, give it separately; the main identifier covers the rest.  Without a main identifier, only the sections you name are downloaded:
 
@@ -112,7 +117,7 @@ The best way around this problem is to set up a local webserver.  One you have y
 All scripts are in `~/tis-clone/scripts` and read their settings from `~/.tis/tis-clone.cfg`.  Run the downloaders from `$DOWNLOAD_TO`.  Except for the ones that print a web page (`build-index.py`, `build-pdfidx.sh`, `toc2html.py` and `toc2topic.py`), every script also appends its output to `$DOWNLOAD_TO/tis-clone.log` (see step 5); `tis-log.sh` and `tislog.py` are the shared code that does this.
 
 Everything at once
-* `~/tis-clone/tis-clone [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--no-pdf]` - find which manuals TIS has, download them and the framework, then (if nothing failed) run tis-urlstripper.sh, build-index.py and the PDF scripts (step 5).  `tis-clone --resume` carries on with the last command where it stopped.
+* `~/tis-clone/tis-clone [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-pdf]` - without a CODE, ask for the make, model and year and look the codes up (tis-lookup.py); find which manuals TIS has, download them, the Reference Information (with `--ref`, which the lookup adds) and the framework, then (if nothing failed) run tis-urlstripper.sh, build-index.py and the PDF scripts (step 5).  `tis-clone --resume` carries on with the last command where it stopped.
 
 Logging in
 * `tis-login.sh [-u USERNAME] [-p PASSWORD] [-m 0|1]` - log in to TIS (with 2FA) and save the session in ~/.tis/cookies.txt.  Defaults come from TIS_USERNAME, TIS_PASSWORD and TIS_MFA in tis-clone.cfg.
@@ -127,8 +132,8 @@ Downloading (HTML manuals, current vehicles)
 Downloading (older vehicles and odds and ends; these also use tis-fetch.py and the MANIFEST)
 * `dl-pdf-rm.sh`, `dl-pdf-ewd.sh`, `dl-pdf-wd.sh`, `dl-pdf-em.sh`, `dl-pdf-bm.sh`, `dl-pdf-br.sh`, `dl-pdf-cr.sh`, `dl-pdf-nm.sh`, `dl-pdf-ncf.sh` `IDENTIFIER` - PDF manuals for roughly 1990-2000 vehicles.  These manuals are a list of small pages that each link to a PDF; the scripts download the pages and the PDFs (including PDFs TIS hides behind a "?locale=" redirect page) and build the manual's navigation page.
 * `dl-pdf-any.sh TYPE/IDENTIFIER` - any other PDF section, ie: `dl-pdf-any.sh cr/BR27J0U`.
-* `dl-ref.sh DIVISION MODEL YEAR` - download a vehicle's Reference Information, ie: `dl-ref.sh LEXUS LX600 2024` or `dl-ref.sh TOYOTA "Land Cruiser" 2013`.  This is what TIS lists under Library > Reference Information for that vehicle: the owner's, navigation/multimedia and accessory manuals, the warranty and maintenance guide, the older (to about 2015) Flat Rate Manuals, the dealer model reference, VIN decoder chart, fluid specifications, emergency response guides and similar technician references, and ASM/parts reference pages.  YEAR can be a range (`2022-2027`).  It shows up on the front page as "DIVISION YEAR MODEL Reference Information".  Newer vehicles' Flat Rate Manual is a separate TIS application and isn't included yet.
-* `tis-lookup.py [MAKE MODEL YEAR] [--args]` - find a vehicle's manual codes (step 4).  It asks for anything not given.  `--args` prints only the tis-clone arguments, ie: `23C0U --bm 18M0U`.
+* `dl-ref.sh DIVISION MODEL YEAR` - download a vehicle's Reference Information, ie: `dl-ref.sh LEXUS LX600 2024` or `dl-ref.sh TOYOTA "Land Cruiser" 2013`.  This is what TIS lists under Library > Reference Information for that vehicle: the owner's, navigation/multimedia and accessory manuals, the warranty and maintenance guide, the older (to about 2015) Flat Rate Manuals, the dealer model reference, VIN decoder chart, fluid specifications, emergency response guides and similar technician references, and ASM/parts reference pages.  YEAR can be a range (`2022-2027`) or a list (`2022,2024-2025`).  It shows up on the front page as "DIVISION YEAR MODEL Reference Information".  Newer vehicles' Flat Rate Manual is a separate TIS application and isn't included yet.
+* `tis-lookup.py [MAKE MODEL YEAR] [--args]` - find a vehicle's manual codes (step 4).  It asks for anything not given.  `--args` prints only the tis-clone arguments, ie: `23C0U --bm 18M0U --ref TOYOTA:Prius_V:2013` (tis-clone uses this when run without a code).  `--ref-for TOC.XML` reads which vehicle a downloaded manual is for, asks for the model year(s) and prints the `--ref` value (tis-clone uses this when given a code without `--ref`).
 * `tis-refsearch.py DIVISION MODEL YEAR [-g GROUP]` - just list what dl-ref.sh would download.  `tis-refsearch.py --models DIVISION` and `--years DIVISION` list the models and years TIS knows (Toyota's model names are mixed case, ie: `Land Cruiser`; the model is matched without regard to case).
 * `dl-anypage.sh URI ...` - download TIS pages plus the images, stylesheets, scripts and PDFs they use, ie: `dl-anypage.sh /t3Portal/index.jsp`.  It does not follow links to other pages.
 
