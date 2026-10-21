@@ -3,7 +3,7 @@
    
       ```git clone https://github.com/rootflags/tis-clone ~/tis-clone```
    
-2. Run the setup script.  The first time, it creates your settings file, ~/.tis/tis-clone.cfg, from the one in the repo and asks for the settings you're likely to change: where to download to (use a separate folder for each vehicle); optionally your TIS login and 2FA method, so you don't have to type them each time; and, if you publish the download on a website, its address (MYURL, where links in a PDF to another manual go) and folder (MYURL_BASE, only used by the older PDF scripts).  Then it checks the software tis-clone needs and creates the folders.  Run it again any time to review your settings; Enter keeps each current value and "-" clears it.  The other settings are described in the file itself.
+2. Run the setup script.  The first time, it creates your settings file, ~/.tis/tis-clone.cfg, from the one in the repo and asks for the settings you're likely to change: where to download to (use a separate folder for each vehicle); optionally your TIS login and 2FA method, so you don't have to type them each time; and, if you publish the download on a website, its address (MYURL, where links in a PDF to another manual go) and folder (MYURL_BASE, only used by the older PDF scripts).  Then it checks the software tis-clone needs, lists everything missing (needed to download, needed for PDFs, or optional) with the command that installs it on your system (apt, dnf, pacman, zypper or Homebrew), offers to run that command, and creates the folders.  Run it again any time to review your settings; Enter keeps each current value and "-" clears it.  The other settings are described in the file itself.
 
       ```cd ~/tis-clone && ./setup.sh```
 
@@ -148,7 +148,7 @@ Checking and cleaning up
 * `tis-urlstripper.sh [FOLDER]` - remove absolute TIS links so the copy works on your own web server (step 7).
 
 Building the website and PDFs
-* `build-index.py [FOLDER] > index.html` - front page listing every downloaded manual (step 9).
+* `build-index.py [FOLDER] > index.html` - front page listing every downloaded manual (step 9), plus a Fluid Capacities list linking each repair manual's service data pages that give fluid capacities (on newer manuals one MAINTENANCE page per model year range; on older ones the engine cooling and lubrication, transfer, ... pages).
 * `tis-serve.py [-p PORT] [-b ADDRESS] [FOLDER]` - serve the download for browsing (see below).  If the port is in use, it uses the next free one.
 * `tis-mkpdfs.sh IDENTIFIER` - make the PDFs (step 8), using `tis-pdfbook.py` for each manual and Ghostscript for the wiring diagrams; `build-pdfidx.sh` makes the PDF index page.
 * `tis-pdfbook.py TOC.XML OUT.PDF [-j JOBS]` - make one PDF of a manual, with working internal links and bookmarks from its toc.xml.
