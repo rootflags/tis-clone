@@ -81,13 +81,14 @@ def read_manifest(path):
     return entries
 
 
-# Reference Information documents (dl-ref.sh): publication folder -> (label, rerun command), from the
-# toc.xml files tis-refsearch.py writes under t3Portal/external/en/ref/
+# Reference Information and bulletin documents (dl-ref.sh, dl-bulletins.sh): publication folder -> (label, rerun command), from the
+# toc.xml files tis-refsearch.py writes under t3Portal/external/en/ref/ and bulletins/
 REF_DOCS = {}
 
 
 def load_ref_docs(root):
-    for toc in glob.glob(os.path.join(root, "t3Portal/external/en/ref/*/toc.xml")):
+    for toc in glob.glob(os.path.join(root, "t3Portal/external/en/ref/*/toc.xml")) + \
+            glob.glob(os.path.join(root, "t3Portal/external/en/bulletins/*/toc.xml")):
         try:
             xml = ET.parse(toc).getroot()
         except (OSError, ET.ParseError):
@@ -95,13 +96,14 @@ def load_ref_docs(root):
         search = (xml.get("refsearch") or "").split("|")
         if len(search) != 3:
             continue
-        label = "ref/" + os.path.basename(os.path.dirname(toc))
-        cmd = "dl-ref.sh " + " ".join(shlex.quote(s) for s in search)
+        folder = os.path.dirname(toc)
+        label = os.path.basename(os.path.dirname(folder)) + "/" + os.path.basename(folder)
+        cmd = (xml.get("rerun") or "dl-ref.sh") + " " + " ".join(shlex.quote(s) for s in search)
         for it in xml.iter("item"):
             parts = (it.get("href") or "").split("/")
             if len(parts) > 5 and parts[2] == "document":
                 REF_DOCS["/".join(parts[:5]) + "/"] = (label, cmd)
-        REF_DOCS["/t3Portal/external/en/ref/%s/" % os.path.basename(os.path.dirname(toc))] = (label, cmd)
+        REF_DOCS["/t3Portal/external/en/%s/" % label] = (label, cmd)
 
 
 def manual_of(path):

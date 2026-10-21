@@ -7,7 +7,13 @@
 #   Technician    dealer model reference, emergency response guides, VIN decoder charts, technical references
 #   Warranty      "Warranty & Claim Processing": the older (to about 2015) Flat Rate Manuals
 #   Owner, Service Operations/Parts, Canada Technician/Service
-# Newer vehicles' Flat Rate Manual is a separate TIS application and isn't found here.
+# Newer vehicles' Flat Rate Manual is a separate TIS application (tis-frm.py).
+#
+# It can also list what the Service Information search (TIS > Library) has for the vehicle in two of its
+# result tabs, which dl-bulletins.sh downloads:
+#   bulletins     the SB/TT tab's "Service Bulletin" and "Tech Tip" lists (USA; the Canada and Mexico lists
+#                 are left out), without the bulletins marked Obsolete
+#   campaigns     the SC tab: service campaigns and safety recalls (dealer letter and technical instructions)
 #
 # Results are documents on their own (ie: tr/L-TR-0122-D, a VIN decoder chart) or pages of a publication
 # (ie: frm/FM18X0U, the 2013 Land Cruiser Flat Rate Manual).  Some publications cover every vehicle (ie:
@@ -19,8 +25,9 @@
 #
 # Usage:
 #   tis-refsearch.py DIVISION MODEL YEAR [-g GROUP ...]     ie: tis-refsearch.py LEXUS LX600 2024
-#       YEAR can be a range (2022-2027), a list (2022,2024-2025) or ALL.  GROUP: technician, warranty, owner, serviceops, canada
-#       (default: all of them).  --tsv prints one tab separated line per document instead.
+#       YEAR can be a range (2022-2027), a list (2022,2024-2025) or ALL.  GROUP: technician, warranty, owner,
+#       serviceops, canada (the default: all of those), bulletins, campaigns.  --tsv prints one tab separated
+#       line per document instead.
 #   tis-refsearch.py ... --toc toc.xml                      also write the toc.xml
 #   tis-refsearch.py --models DIVISION                      the models TIS knows, ie: LX600, LAND CRUISER
 #   tis-refsearch.py --years DIVISION                       the model years TIS knows
@@ -53,18 +60,30 @@ GROUPS = collections.OrderedDict([
     ("serviceops", "Service Operations"),
     ("canada", "Canada Technician/Service"),
 ])
+# Service Information search result tabs: group -> (tab page, list titles to keep or None for all, skip obsolete)
+SI_GROUPS = collections.OrderedDict([
+    ("bulletins", ("lib_tsb_page", ("Service Bulletin", "Tech Tip"), True)),
+    ("campaigns", ("lib_cp_page", None, False)),
+])
 GROUP_TITLES = {"Technician": "Technician", "Warranty": "Warranty & Claim Processing", "Owner": "Owner",
-                "Service Operations": "Service Operations/Parts", "Canada Technician/Service": "Canada Technician/Service"}
+                "Service Operations": "Service Operations/Parts", "Canada Technician/Service": "Canada Technician/Service",
+                "bulletins": "Service Bulletins and Tech Tips", "campaigns": "Service Campaigns"}
 # Document types (objType) seen so far; others are shown by their code
 TYPES = {"frm": "Flat Rate Manual", "dmr": "Dealer Model Reference", "erg": "Emergency Response Guide",
          "tr": "Technical Reference", "asm": "ASM/Parts Reference", "om-s": "Owner's Manual",
-         "omms-s": "Warranty and Maintenance", "omnav-s": "Navigation, Multimedia and Accessories"}
+         "omms-s": "Warranty and Maintenance", "omnav-s": "Navigation, Multimedia and Accessories",
+         "sb": "Service Bulletin", "sb-usa-tdm": "Service Bulletin", "tt": "Tech Tip", "cp": "Service Campaign"}
 
 REFPAGE = "/t3Portal/appmanager/t3/ti?_nfpb=true&_pageLabel=tis_lib_ref_page"
 SEARCH = ("/t3Portal/appmanager/t3/ti?_nfpb=true&_windowLabel=ReferenceForm_1&ReferenceForm_1_actionOverride="
           "%2Fportlets%2Ftis%2Fdocument%2FsearchUplift%2Fform%2FsearchForm%2FsearchDocument&_pageLabel=t3_page_66")
 VEHICLES = "/t3Portal/ajax/getVehicle.jsp?dataset=%s&key=%s&target=x&addAll=true&prefix=true&formTagId=x&isFireTarget="
 FIELD = "ReferenceForm_1wlw-select_key:{actionForm.%s}"
+# The Service Information search (also used by tis-lookup.py); its results stay in the session, by tab
+SI_SEARCH = ("/t3Portal/appmanager/t3/ti?_nfpb=true&_windowLabel=repairform&repairform_actionOverride="
+             "%2Fportlets%2Ftis%2Fdocument%2FsearchUplift%2Fform%2FsearchForm%2FsearchDocument&_pageLabel=t3_library_repair_search")
+SI_FIELD = "repairformwlw-select_key:{actionForm.%s}"
+TAB = "/t3Portal/appmanager/t3/ti?_nfpb=true&_pageLabel=%s"
 
 COUNT_RE = re.compile(r"writeResultsOnTitleBar\(\s*\d+\s*,\s*'[^']*'\s*\+\s*(\d+)")
 ROW_RE = re.compile(r'<td style="vertical-align:top;\s*width:25px;">\s*\d+\.\s*</td>(.*?)</tr>', re.S)
@@ -72,6 +91,8 @@ LINK_RE = re.compile(r'<a href="([^"]+)"[^>]*>(.*?)</a>', re.S)
 # A results page can hold more than one list (each its own portlet window), and each has its own pages
 NEXT_RE = re.compile(r'<a href="([^"]*_windowLabel=([^&"]+)[^"]*searchResult%2FgoNext[^"]*)"')
 KEYS_RE = re.compile(r'\["([^"]*)","([^"]*)"\]')
+LIST_TITLE_RE = re.compile(r'<td class="bea-portal-details-window-titlebar-title">(.*?)</td>', re.S)
+OBSOLETE_RE = re.compile(r"\bobsolete\W*$", re.I)
 
 
 class SearchFailed(Exception):
@@ -132,7 +153,7 @@ class RefSearch:
         return [v for v, label in KEYS_RE.findall(text) if v != "ALL"]
 
     def search(self, division, model, year, group):
-        """[result dict] for one search, following its "next" pages"""
+        """[result dict] for one Reference Information search, following its "next" pages"""
         data = {
             FIELD % "division" + "OldValue": "true", FIELD % "division": division,
             "ReferenceForm_1{actionForm.invoker}": "reference", "lastChanged": "", "lastModel": "", "lastYear": "",
@@ -140,7 +161,30 @@ class RefSearch:
             FIELD % "docGroup" + "OldValue": "true", FIELD % "docGroup": group,
             "ReferenceForm_1{actionForm.keyword}": "", "ReferenceForm_1{actionForm.searchLanguage}": "en",
         }
-        page = self.request("POST", SEARCH, data)
+        return self.collect(self.request("POST", SEARCH, data), None)
+
+    def si_search(self, division, model, year):
+        """Run the Service Information search; its result tabs can then be read (TAB) in the same session"""
+        data = {
+            SI_FIELD % "division" + "OldValue": "true", SI_FIELD % "division": division,
+            "repairform{actionForm.invoker}": "repair", "lastChanged": "", "lastModel": "", "lastYear": "",
+            SI_FIELD % "model": model, SI_FIELD % "year": year,
+            SI_FIELD % "serviceCategory": "ALL", SI_FIELD % "section": "ALL",
+            "repairform{actionForm.keyword}": "", "repairform{actionForm.searchLanguage}": "en",
+        }
+        page = self.request("POST", SI_SEARCH, data)
+        if "Technical Error" in page:
+            raise SearchFailed("TIS couldn't search for %s %s %s" % (division, model, year))
+
+    def tab_search(self, division, model, year, group):
+        """[result dict] in one Service Information result tab (SI_GROUPS), following its "next" pages"""
+        tab, wanted, skip_obsolete = SI_GROUPS[group]
+        self.si_search(division, model, year)
+        results = self.collect(self.request("GET", TAB % tab), wanted)
+        return [r for r in results if not (skip_obsolete and OBSOLETE_RE.search(r["title"]))]
+
+    def collect(self, page, wanted):
+        """The results in a results page and its next pages: of every list, or of the lists titled wanted"""
         results = collections.OrderedDict()
         total = None
         following = None                        # the list whose next page we asked for
@@ -149,15 +193,18 @@ class RefSearch:
             if "Technical Error" in page:
                 m = re.search(r"MESSAGE:\s*(.*?)(?:\sat\s|$)", html.unescape(re.sub(r"<[^>]+>", " ", page)), re.S)
                 raise SearchFailed("TIS error: %s" % (m.group(1).strip()[:200] if m else "unknown"))
-            if total is None:
-                total = sum(int(n) for n in COUNT_RE.findall(page))
             body = re.sub(r"<!--.*?-->", "", page, flags=re.S)
-            for row in ROW_RE.findall(body):
-                link = LINK_RE.search(row)
-                if link:
-                    r = result(html.unescape(link.group(1)), html.unescape(re.sub(r"<[^>]+>|\s+", " ", link.group(2))).strip())
-                    results.setdefault(r["path"], r)
-            nexts = collections.OrderedDict((label, url) for url, label in NEXT_RE.findall(body))
+            lists = [part for part in result_lists(body) if wanted is None or part[0] in wanted]
+            if total is None:
+                total = sum(int(n) for title, part in lists for n in COUNT_RE.findall(part))
+            nexts = collections.OrderedDict()
+            for title, part in lists:
+                for row in ROW_RE.findall(part):
+                    link = LINK_RE.search(row)
+                    if link:
+                        r = result(html.unescape(link.group(1)), html.unescape(re.sub(r"<[^>]+>|\s+", " ", link.group(2))).strip())
+                        results.setdefault(r["path"], r)
+                nexts.update((label, url) for url, label in NEXT_RE.findall(part))
             links.update(nexts)
             if following is None:
                 todo = list(nexts)              # every list that has more pages
@@ -173,6 +220,17 @@ class RefSearch:
         if len(results) != total:
             print("    (TIS said %d results, %d were listed)" % (total, len(results)), flush=True)
         return list(results.values())
+
+
+def result_lists(body):
+    """[(title, part of the page)] for each titled window on a results page (ie: Service Bulletin, Tech Tip)"""
+    found = [(m.start(), html.unescape(re.sub(r"<[^>]+>|\s+", " ", m.group(1))).strip()) for m in LIST_TITLE_RE.finditer(body)]
+    if not found:
+        return [("", body)]
+    parts = [("", body[:found[0][0]])]
+    for i, (pos, title) in enumerate(found):
+        parts.append((title, body[pos:found[i + 1][0] if i + 1 < len(found) else len(body)]))
+    return parts
 
 
 def result(link, title):
@@ -206,12 +264,20 @@ def years_of(spec):
 def section(r):
     """The toc.xml section a result goes in: its publication, or for a document on its own, its type"""
     kind = TYPES.get(r["type"], r["type"].upper() or "Other")
+    if r["type"] == "cp":
+        # One section per campaign: "Safety Recall 24LA02 (Remedy Notice): 2022-2024 LX600; ... (Dealer Letter)" and
+        # "SAFETY RECALL 24LA02; ... (Technical Instructions)" both go in "Safety Recall 24LA02"
+        m = re.match(r"^(.*?)\b(\d\d[A-Z]{2}\d\d)\b", r["title"])
+        if m:
+            words = " ".join(re.sub(r"\([^)]*\)", " ", m.group(1)).split())     # "Safety (Noncompliance) Recall"
+            return "%s %s" % (words.title() if words.isupper() else words, m.group(2))
+        return r["title"].split(":")[0].strip()
     if r["toc"]:
         return "%s: %s (%s)" % (kind, r["title"].split(":")[0].strip(), r["pub"].split("/")[-1])
     return kind
 
 
-def write_toc(path, title, found, search):
+def write_toc(path, title, found, search, rerun):
     """A toc.xml (the same layout as TIS's) of everything found: group > publication or type > document"""
     tree = collections.OrderedDict()
     for group, results in found.items():
@@ -219,7 +285,7 @@ def write_toc(path, title, found, search):
             if r["path"].startswith("/t3Portal/document/"):
                 tree.setdefault(GROUP_TITLES[group], collections.OrderedDict()).setdefault(section(r), []).append(r)
     out = ['<?xml version="1.0" encoding="UTF-8"?>\n<!-- Made by tis-refsearch.py from a TIS Reference Information search -->\n'
-           "<xmltoc refsearch=%s>\n  <name>%s</name>\n" % (quoteattr("|".join(search)), escape(title))]
+           "<xmltoc refsearch=%s rerun=%s>\n  <name>%s</name>\n" % (quoteattr("|".join(search)), quoteattr(rerun), escape(title))]
     for group, kinds in tree.items():
         out.append('  <item href="">\n    <name>%s</name>\n' % escape(group))
         for kind, results in kinds.items():
@@ -239,10 +305,13 @@ def write_toc(path, title, found, search):
 def main():
     ap = argparse.ArgumentParser(description="Search TIS's Reference Information for a vehicle")
     ap.add_argument("vehicle", nargs="*", metavar="DIVISION MODEL YEAR", help="ie: LEXUS LX600 2024 (YEAR: 2024, 2022-2027, 2022,2024 or ALL)")
-    ap.add_argument("-g", "--group", action="append", choices=list(GROUPS), help="document group (default: all)")
+    ap.add_argument("-g", "--group", action="append", choices=list(GROUPS) + list(SI_GROUPS),
+                    help="document group (default: all the Reference Information ones)")
     ap.add_argument("--tsv", action="store_true", help="one tab separated line per document: group, type, publication, path, title")
     ap.add_argument("--toc", metavar="FILE", help="write a toc.xml of the documents that don't have their own")
-    ap.add_argument("--title", help="title for the --toc file (default: DIVISION YEAR MODEL Reference Information)")
+    ap.add_argument("--title", help="title for the --toc file (default: DIVISION YEAR MODEL WHAT)")
+    ap.add_argument("--what", default="Reference Information", help="what the --toc file is, for its title (default: Reference Information)")
+    ap.add_argument("--rerun", default="dl-ref.sh", help="the script that remakes the --toc folder, for tis-report.py (default dl-ref.sh)")
     ap.add_argument("--models", metavar="DIVISION", help="list the models TIS knows for a division")
     ap.add_argument("--years", metavar="DIVISION", help="list the model years TIS knows for a division")
     ap.add_argument("--wait", type=float, default=1.0, help="seconds between requests (default 1)")
@@ -274,14 +343,17 @@ def main():
     found = collections.OrderedDict()
     rc = 0
     for g in args.group or list(GROUPS):
-        group = GROUPS[g]
+        group = GROUPS.get(g, g)
         seen = set()
         found[group] = []
         for y in years_of(year):
             if not args.tsv:
                 print("Searching %s %s %s, %s ..." % (division, model, y, GROUP_TITLES[group]), flush=True)
             try:
-                results = rs.retrying(rs.search, division, model, y, group)
+                if g in SI_GROUPS:
+                    results = rs.retrying(rs.tab_search, division, model, y, g)
+                else:
+                    results = rs.retrying(rs.search, division, model, y, group)
             except SearchFailed as e:
                 print("    search failed: %s" % e, flush=True)
                 rc = 1
@@ -309,8 +381,8 @@ def main():
             print("    %-48s %s (%d pages)" % (pub + "/", section(pubs[pub][0]), len(pubs[pub])))
 
     if args.toc:
-        title = args.title or "%s %s %s Reference Information" % (division, year, model)
-        n = write_toc(args.toc, title, found, (division, model, year))
+        title = args.title or "%s %s %s %s" % (division, year, model, args.what)
+        n = write_toc(args.toc, title, found, (division, model, year), args.rerun)
         if not args.tsv:
             print("\nWrote %s (%d documents)" % (args.toc, n))
     return rc

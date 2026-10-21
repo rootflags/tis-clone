@@ -47,10 +47,7 @@ tis_refsearch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(tis_refsearch)
 
 DIVISIONS = ["LEXUS", "SCION", "TOYOTA"]
-SEARCH = ("/t3Portal/appmanager/t3/ti?_nfpb=true&_windowLabel=repairform&repairform_actionOverride="
-          "%2Fportlets%2Ftis%2Fdocument%2FsearchUplift%2Fform%2FsearchForm%2FsearchDocument&_pageLabel=t3_library_repair_search")
-FIELD = "repairformwlw-select_key:{actionForm.%s}"
-TAB = "/t3Portal/appmanager/t3/ti?_nfpb=true&_pageLabel=%s"
+TAB = tis_refsearch.TAB
 # tis-clone option, title, results tab, publication prefixes
 SECTIONS = [
     ("rm", "Repair Manual", "lib_rm_page", ("RM",)),
@@ -99,16 +96,7 @@ def match(answer, options):
 
 def codes(rs, division, model, year):
     """{section: Counter((prefix, code))} from a Service Information search and its result tabs"""
-    data = {
-        FIELD % "division" + "OldValue": "true", FIELD % "division": division,
-        "repairform{actionForm.invoker}": "repair", "lastChanged": "", "lastModel": "", "lastYear": "",
-        FIELD % "model": model, FIELD % "year": year,
-        FIELD % "serviceCategory": "ALL", FIELD % "section": "ALL",
-        "repairform{actionForm.keyword}": "", "repairform{actionForm.searchLanguage}": "en",
-    }
-    page = rs.request("POST", SEARCH, data)
-    if "Technical Error" in page:
-        raise tis_refsearch.SearchFailed("TIS couldn't search for %s %s %s" % (division, model, year))
+    rs.si_search(division, model, year)
     found = collections.OrderedDict()
     for option, title, tab, prefixes in SECTIONS:
         page = rs.request("GET", TAB % tab)
