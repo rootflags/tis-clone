@@ -9,7 +9,7 @@
 # exit status line.  Scripts it runs see TIS_LOGGING and don't log a second time.  tis-fetch.py and
 # tis-serve.py do the same through tislog.py.
 #
-# Scripts whose output is data (build-index.pl, build-pdfidx.sh, toc2html, ...) don't use this.
+# Scripts whose output is data (build-index.py, build-pdfidx.sh, toc2html.py, ...) don't use this.
 #
 
 if [ -z "${TIS_LOGGING}" ]; then

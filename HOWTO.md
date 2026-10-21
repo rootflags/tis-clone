@@ -77,7 +77,7 @@
 * The wiring diagrams are made into four PDFs (overall, relay, routing, system) from TIS's own diagram PDFs.
 
 9. Create Navigation.  Rerun it after downloading more manuals:
-* For HTML docs: ```~/tis-clone/scripts/build-index.pl > $DOWNLOAD_TO/techinfo.toyota.com/index.html```
+* For HTML docs: ```~/tis-clone/scripts/build-index.py > $DOWNLOAD_TO/techinfo.toyota.com/index.html```
 
 * For PDF docs: ```~/tis-clone/scripts/build-pdfidx.sh > $DOWNLOAD_TO/techinfo.toyota.com/PDFs/index.html```
 
@@ -108,10 +108,10 @@ The best way around this problem is to set up a local webserver.  One you have y
 * nginx and other webservers will probably work as well.  Just make sure you can associate JSP files as text/html if the pages don't display correctly as the index.jsp file needs to do some dynamic data loading of XHTML and other file types to create the HTML pages you see.
 
 # Script reference
-All scripts are in `~/tis-clone/scripts` and read their settings from `~/.tis/tis-clone.cfg`.  Run the downloaders from `$DOWNLOAD_TO`.  Except for the ones that print a web page (`build-index.pl`, `build-pdfidx.sh`, `toc2html` and the other `toc2*` tools), every script also appends its output to `$DOWNLOAD_TO/tis-clone.log` (see step 5); `tis-log.sh` and `tislog.py` are the shared code that does this.
+All scripts are in `~/tis-clone/scripts` and read their settings from `~/.tis/tis-clone.cfg`.  Run the downloaders from `$DOWNLOAD_TO`.  Except for the ones that print a web page (`build-index.py`, `build-pdfidx.sh`, `toc2html.py` and `toc2topic.py`), every script also appends its output to `$DOWNLOAD_TO/tis-clone.log` (see step 5); `tis-log.sh` and `tislog.py` are the shared code that does this.
 
 Everything at once
-* `~/tis-clone/tis-clone [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--no-pdf]` - find which manuals TIS has, download them and the framework, then (if nothing failed) run tis-urlstripper.sh, build-index.pl and the PDF scripts (step 5).  `tis-clone --resume` carries on with the last command where it stopped.
+* `~/tis-clone/tis-clone [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--no-pdf]` - find which manuals TIS has, download them and the framework, then (if nothing failed) run tis-urlstripper.sh, build-index.py and the PDF scripts (step 5).  `tis-clone --resume` carries on with the last command where it stopped.
 
 Logging in
 * `tis-login.sh [-u USERNAME] [-p PASSWORD] [-m 0|1]` - log in to TIS (with 2FA) and save the session in ~/.tis/cookies.txt.  Defaults come from TIS_USERNAME, TIS_PASSWORD and TIS_MFA in tis-clone.cfg.
@@ -137,12 +137,13 @@ Checking and cleaning up
 * `tis-urlstripper.sh [FOLDER]` - remove absolute TIS links so the copy works on your own web server (step 7).
 
 Building the website and PDFs
-* `build-index.pl > index.html` - front page listing every downloaded manual (step 9).
+* `build-index.py [FOLDER] > index.html` - front page listing every downloaded manual (step 9).
 * `tis-serve.py [-p PORT] [-b ADDRESS] [FOLDER]` - serve the download for browsing (see below).  If the port is in use, it uses the next free one.
 * `tis-mkpdfs.sh IDENTIFIER` - make the PDFs (step 8), using `tis-pdfbook.py` for each manual and Ghostscript for the wiring diagrams; `build-pdfidx.sh` makes the PDF index page.
 * `tis-pdfbook.py TOC.XML OUT.PDF [-j JOBS]` - make one PDF of a manual, with working internal links and bookmarks from its toc.xml.
 * `repdf PDF ...` - split and re-merge PDF files.
-* `toc2html toc.xml` - navigation page for one manual (run by the downloaders).
+* `toc2html.py toc.xml > toc.html` - navigation page for one manual (run by the downloaders).
+* `toc2topic.py toc.xml` - print the vehicle a manual is for, ie: `TOYOTA 2013-2018 RAV4` (tis-mkpdfs.sh uses it to name the PDF folder).
 * `tis-merge.sh TARGET` - copy the current folder into your website (step 10).
 * `make-iso.sh` - build an ISO image of the download (written for the Land Cruiser; edit the name and volume label first).
-* Older helpers kept for reference, generally not needed anymore: `create-nav.sh`, `toc2nav`, `updatenav.pl`, `tis-consolidate.pl`, `tis-pdfer.sh`, `tis-html2pdf.sh`, `tis-html2pdf2.sh`, `tis-xhtml2pdf.sh`, `toc2pdf` (the old PDF method, which needed a `/t3Portal` link and couldn't keep links working).
+* Older helpers kept for reference, generally not needed anymore: `tis-pdfer.sh`, `tis-html2pdf.sh`, `tis-html2pdf2.sh`, `tis-xhtml2pdf.sh` (the old PDF method, which needed a `/t3Portal` link and couldn't keep links working).

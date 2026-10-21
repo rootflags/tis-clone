@@ -16,19 +16,10 @@ echo "Loaded tis-clone.cfg defaults from $CFG"
 
 echo "Checking dependencies..."
 # Confirm we have all the basic packages required
-for cmd in bash cat cp curl cut diff find grep gzip head ls mkdir mv perl python3 rm rmdir sed sort xargs gs pdfinfo pdfseparate pdftk rsync wkhtmltopdf; do
+for cmd in bash cat cp curl cut diff find grep gzip head ls mkdir mv python3 rm rmdir sed sort xargs gs pdfinfo pdfseparate pdftk rsync wkhtmltopdf; do
 	which $cmd > /dev/null 2>&1
 	if [ $? != 0 ]; then
 		echo "** $cmd not found"
-		exit 1
-	fi
-done
-
-# Check for necessary perl modules
-for module in Cwd Data::Dumper Getopt::Long List::MoreUtils Switch XML::Simple; do
-	perl -e "use $module;" > /dev/null 2>&1
-	if [ $? != 0 ]; then
-		echo "** Perl module $module not found"
 		exit 1
 	fi
 done

@@ -176,7 +176,7 @@ def main():
                 queries += 1
                 continue
             if name.endswith(SKIP_SUFFIXES) or name == "toc.html" or os.path.islink(f):
-                continue                    # (toc.html is made by toc2html, not downloaded)
+                continue                    # (toc.html is made by toc2html.py, not downloaded)
             rel = "/" + os.path.relpath(f, root).replace(os.sep, "/")
             checked += 1
             try:

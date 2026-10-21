@@ -39,7 +39,7 @@ cp -a ${BASE}/website-framework/* ${FSM_URLBASE}/
 		french_available en_unavailable es_unavailable fr_unavailable; do
 		echo /t3Portal/resources/images/language/en/${F}.png
 	done
-	# The TIS stylesheet; its images include the header bar that build-index.pl and build-pdfidx.sh use
+	# The TIS stylesheet; its images include the header bar that build-index.py and build-pdfidx.sh use
 	echo /t3Portal/framework/skins/t3/css/all-t3.css
 	echo /favicon.ico
 	for F in stylegraphics/clear.gif stylegraphics/header-left.gif stylegraphics/header-right.gif \
@@ -48,7 +48,7 @@ cp -a ${BASE}/website-framework/* ${FSM_URLBASE}/
 	done
 
 	# The TIS siviewer navigation pages (resources/jsp/siviewer/*.jsp) aren't needed: each manual gets its
-	# own navigation from toc2html, and only the siviewer icons above are used.
+	# own navigation from toc2html.py, and only the siviewer icons above are used.
 } > ${LIST}
 
 # favicon.ico lives outside /t3Portal/

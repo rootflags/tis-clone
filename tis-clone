@@ -232,7 +232,7 @@ fi
 echo ""
 echo "########## Building the website"
 ${SCRIPT_BASE}/tis-urlstripper.sh
-${SCRIPT_BASE}/build-index.pl > ${FSM_URLBASE}/index.html.new && mv -f ${FSM_URLBASE}/index.html.new ${FSM_URLBASE}/index.html
+${SCRIPT_BASE}/build-index.py > ${FSM_URLBASE}/index.html.new && mv -f ${FSM_URLBASE}/index.html.new ${FSM_URLBASE}/index.html
 echo "Website ready in ${FSM_URLBASE}.  To browse it: ${SCRIPT_BASE}/tis-serve.py"
 
 ## PDFs (optional, slow).  The website is already complete, so a problem here doesn't break it.
@@ -251,7 +251,7 @@ if [ ${PDF} = 1 ]; then
 	if [ -d ${FSM_URLBASE}/PDFs ]; then
 		${SCRIPT_BASE}/build-pdfidx.sh > ${FSM_URLBASE}/PDFs/index.html
 		# The front page links the PDF index once it exists
-		${SCRIPT_BASE}/build-index.pl > ${FSM_URLBASE}/index.html.new && mv -f ${FSM_URLBASE}/index.html.new ${FSM_URLBASE}/index.html
+		${SCRIPT_BASE}/build-index.py > ${FSM_URLBASE}/index.html.new && mv -f ${FSM_URLBASE}/index.html.new ${FSM_URLBASE}/index.html
 	fi
 	[ ${FAILED} = 0 ] || echo "Making the PDFs had problems (see above).  The website is fine."
 fi

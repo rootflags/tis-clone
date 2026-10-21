@@ -34,7 +34,7 @@ RC=$?
 [ $RC = 75 ] && exit $RC
 
 # Create JSP static navigation
-${SCRIPT_BASE}/toc2html ${FSM_URLBASE}/${FOLDER}/toc.xml > ${FSM_URLBASE}/${FOLDER}/toc.html
+${SCRIPT_BASE}/toc2html.py ${FSM_URLBASE}/${FOLDER}/toc.xml > ${FSM_URLBASE}/${FOLDER}/toc.html
 cp ${BASE}/website-framework/index.html  ${FSM_URLBASE}/${FOLDER}/
 
 exit $RC

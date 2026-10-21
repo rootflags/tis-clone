@@ -47,7 +47,7 @@ do
 		*) TYPE=Manual ;;
 	esac
 	if [ x"${MODEL}" = x ]; then
-		MODEL=`${SCRIPT_BASE}/toc2topic ${TOC}`
+		MODEL=`${SCRIPT_BASE}/toc2topic.py ${TOC}`
 		mkdir -p "${PDFDIR}/${MODEL}"
 	fi
 	echo "* Making ${PDFDIR}/${MODEL}/${TYPE}-${DOCID}.pdf"
@@ -75,7 +75,7 @@ do
 	###
 	echo "Compiling Wiring Diagrams for EM${GSICCODE}"
 	if [ x"${MODEL}" = x ]; then
-		MODEL=`${SCRIPT_BASE}/toc2topic $EWD_BASE/xhtml/termdata.xml`
+		MODEL=`${SCRIPT_BASE}/toc2topic.py $EWD_BASE/xhtml/termdata.xml`
 		mkdir -p "${PDFDIR}/${MODEL}"
 	fi
 	echo "* Overall PDFs"
