@@ -1,17 +1,17 @@
 # How to Use the Scripts
-1. Checkout this software into $HOME/tis-clone.  If you put it somewhere else, modify $BASE in tis-clone.cfg with the location
+1. Checkout this software, ie: into $HOME/tis-clone.  If you put it somewhere else, setup.sh sets $BASE in your tis-clone.cfg to match
    
       ```git clone https://github.com/rootflags/tis-clone ~/tis-clone```
    
-2. Run the setup script which will create the necessary folder structure
- 
+2. Run the setup script.  The first time, it creates your settings file, ~/.tis/tis-clone.cfg, from the one in the repo and asks for the settings you're likely to change: where to download to (use a separate folder for each vehicle); optionally your TIS login and 2FA method, so you don't have to type them each time; and, if you publish the download on a website, its address (MYURL, where links in a PDF to another manual go) and folder (MYURL_BASE, only used by the older PDF scripts).  Then it checks the software tis-clone needs and creates the folders.  Run it again any time to review your settings; Enter keeps each current value and "-" clears it.  The other settings are described in the file itself.
+
       ```cd ~/tis-clone && ./setup.sh```
 
 3. Account Prep:
 * Visit TIS (https://techinfo.toyota.com), create an account, and follow the instructions to create an active subscription.  Typically a 2 day subscription will be enough
 * Run ```~/tis-clone/scripts/tis-login.sh``` and enter your username and password and which 2FA method you want to use (phone or email)
 * Enter the 2FA code.  The script checks the new session by fetching a subscriber-only PDF and only saves $HOME/.tis/cookies.txt if that works, ending with "Login successful!"
-* To avoid typing them every time, you can put your login in ~/.tis/tis-clone.cfg (and `chmod 600` it, since it then holds your password).  Command line options (`-u USERNAME -p PASSWORD -m 0|1`) override these:
+* To avoid typing them every time, setup.sh can save your login in ~/.tis/tis-clone.cfg (and keeps that file private, since it then holds your password), or you can add it yourself.  Command line options (`-u USERNAME -p PASSWORD -m 0|1`) override these:
 
          TIS_USERNAME="you@example.com"
          TIS_PASSWORD="your password"
@@ -25,7 +25,7 @@
 * Recent vehicles usually publish the collision repair manual as BM (CR doesn't exist) and New Car Features as NM (NCF doesn't exist).  For example the 2013-2018 RAV4 is RM30B0U, EM30B0U, BM30B0U and NM30B0U.  Trying a type that doesn't exist is harmless: the script stops with "No documents in .../toc.xml" or "termdata.xml did not download".
 
 5. Downloading:
-* By default the setup.sh script will create the download folder based on the $DOWNLOAD_TO variable in tis-clone.cfg.  If you create a different location you'll need to modify ~/.tis/tis-clone.cfg
+* Files go to the $DOWNLOAD_TO folder in ~/.tis/tis-clone.cfg.  To download another vehicle into its own folder, rerun setup.sh (or edit the file) and change it first.
 * **The easy way: one command does steps 5 to 9.**  It works out which manuals TIS has for the identifier (RM, EM/EWD/WD, BM/CR/BR, NM/NCF), downloads them and the website framework, and then, if nothing failed, cleans up the links, builds the front page and makes the PDFs.  Rerun the same command to resume after an interruption or failure.
 
          ~/tis-clone/tis-clone $IDENTIFIER
@@ -126,6 +126,8 @@ Downloading (HTML manuals, current vehicles)
 Downloading (older vehicles and odds and ends; these also use tis-fetch.py and the MANIFEST)
 * `dl-pdf-rm.sh`, `dl-pdf-ewd.sh`, `dl-pdf-wd.sh`, `dl-pdf-em.sh`, `dl-pdf-bm.sh`, `dl-pdf-br.sh`, `dl-pdf-cr.sh`, `dl-pdf-nm.sh`, `dl-pdf-ncf.sh` `IDENTIFIER` - PDF manuals for roughly 1990-2000 vehicles.  These manuals are a list of small pages that each link to a PDF; the scripts download the pages and the PDFs (including PDFs TIS hides behind a "?locale=" redirect page) and build the manual's navigation page.
 * `dl-pdf-any.sh TYPE/IDENTIFIER` - any other PDF section, ie: `dl-pdf-any.sh cr/BR27J0U`.
+* `dl-ref.sh DIVISION MODEL YEAR` - download a vehicle's Reference Information, ie: `dl-ref.sh LEXUS LX600 2024` or `dl-ref.sh TOYOTA "Land Cruiser" 2013`.  This is what TIS lists under Library > Reference Information for that vehicle: the owner's, navigation/multimedia and accessory manuals, the warranty and maintenance guide, the older (to about 2015) Flat Rate Manuals, the dealer model reference, VIN decoder chart, fluid specifications, emergency response guides and similar technician references, and ASM/parts reference pages.  YEAR can be a range (`2022-2027`).  It shows up on the front page as "DIVISION YEAR MODEL Reference Information".  Newer vehicles' Flat Rate Manual is a separate TIS application and isn't included yet.
+* `tis-refsearch.py DIVISION MODEL YEAR [-g GROUP]` - just list what dl-ref.sh would download.  `tis-refsearch.py --models DIVISION` and `--years DIVISION` list the models and years TIS knows (Toyota's model names are mixed case, ie: `Land Cruiser`; the model is matched without regard to case).
 * `dl-anypage.sh URI ...` - download TIS pages plus the images, stylesheets, scripts and PDFs they use, ie: `dl-anypage.sh /t3Portal/index.jsp`.  It does not follow links to other pages.
 
 Checking and cleaning up

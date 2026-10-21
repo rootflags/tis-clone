@@ -19,8 +19,10 @@ FOLDER=$1
 # script after a failure picks up where it stopped.  Exit status 75 means the session expired and
 # could not be renewed.
 
-## TOC
-${SCRIPT_BASE}/tis-fetch.py "${FOLDER}/toc.xml" || exit $?
+## TOC (dl-ref.sh's toc.xml is made locally by tis-refsearch.py, not downloaded)
+if ! grep -q 'Made by tis-refsearch.py' ${FSM_URLBASE}/${FOLDER}/toc.xml 2>/dev/null; then
+	${SCRIPT_BASE}/tis-fetch.py "${FOLDER}/toc.xml" || exit $?
+fi
 if ! grep -q "href=.*xhtml" ${FSM_URLBASE}/${FOLDER}/toc.xml 2>/dev/null; then
 	echo "No documents in ${FOLDER}/toc.xml.  Is the identifier right for this manual type?"
 	exit 1

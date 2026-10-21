@@ -79,12 +79,14 @@ def load_cfg():
 
 
 class LinkParser(html.parser.HTMLParser):
-    """Collect the files a page needs to display: images, scripts, stylesheets, backgrounds"""
+    """Collect the files a page needs to display: images, scripts, stylesheets, backgrounds, and files it
+    links to or sends the browser to (Reference Information pages are a script that opens their PDF)"""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.links = []
         self.in_style = False
+        self.in_script = False
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
@@ -94,23 +96,31 @@ class LinkParser(html.parser.HTMLParser):
             self.links.append(a["href"])
         elif tag == "object" and a.get("data"):
             self.links.append(a["data"])
-        elif tag == "a" and a.get("href"):
+        elif tag == "a" and a.get("href") and is_file(a["href"]):
             # Follow links to files (PDFs, images, videos) but not to other documents, which are all in toc.xml
-            ext = os.path.splitext(urllib.parse.urlsplit(a["href"]).path.lower())[1]
-            if ext and ext not in HTML_EXT and ext != ".xml":
-                self.links.append(a["href"])
+            self.links.append(a["href"])
         if a.get("background"):
             self.links.append(a["background"])
         if a.get("style"):
             self.links += css_links(a["style"])
         self.in_style = tag == "style"
+        self.in_script = tag == "script"
 
     def handle_endtag(self, tag):
-        self.in_style = False
+        self.in_style = self.in_script = False
 
     def handle_data(self, data):
         if self.in_style:
             self.links += css_links(data)
+        elif self.in_script:
+            # location="/t3Portal/document/om-s/OM60V70U/pdf/OM60V70U.pdf";
+            self.links += [u for u in re.findall(r"""location\s*=\s*["']([^"']+)["']""", data) if is_file(u)]
+
+
+def is_file(link):
+    """A link to a file (PDF, image, video, ...) rather than to another page"""
+    ext = os.path.splitext(urllib.parse.urlsplit(link).path.lower())[1]
+    return bool(ext) and ext not in HTML_EXT and ext != ".xml"
 
 
 def css_links(text):
@@ -351,16 +361,20 @@ class Fetcher:
 
         ext = os.path.splitext(path.lower())[1]
         ctype = r.headers.get("Content-Type", "")
-        stub = STUB_RE.search(r.content[:2000]) if ext in MAGIC and r.status_code == 200 else None
-        if stub and not r.content.startswith(MAGIC[ext]):
-            # Some "PDFs" are a script that reloads the same file with ?locale=; fetch what it points at
+        # Some "PDFs" are a script that reloads the same file with ?locale=, and some of those answer with
+        # another script that adds ?sisuffix=ff&locale=en&siid=; fetch what they point at
+        for _ in range(3):
+            stub = STUB_RE.search(r.content[:2000]) if ext in MAGIC and r.status_code == 200 else None
+            if not stub or r.content.startswith(MAGIC[ext]):
+                break
             target = self.url_for(urllib.parse.urljoin(url, stub.group(1).decode() + ("en" if stub.group(1).endswith(b"=") else "")))
-            if target:
-                time.sleep(self.args.wait)
-                r = self.get(target[0])
-                if isinstance(r, str):
-                    self.record(path, "FAILED", note=r)
-                    return []
+            if not target:
+                break
+            time.sleep(self.args.wait)
+            r = self.get(target[0])
+            if isinstance(r, str):
+                self.record(path, "FAILED", note=r)
+                return []
         suspect = None
         if r.status_code in (401, 403):
             suspect = ("FORBIDDEN", "HTTP %d" % r.status_code)

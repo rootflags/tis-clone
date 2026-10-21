@@ -24,11 +24,14 @@
 
 import argparse
 import collections
+import glob
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET
 
 from tislog import tee_to_log
 
@@ -48,6 +51,7 @@ SCRIPTS = {
 NORMAL_MISSING = [
     (re.compile(r"/ewd/contents/tree/\d+/tree-[^/]+\.xml$"), "wiring tree pages TIS doesn't have (the viewer never asks for them)"),
     (re.compile(r"/ewd/icon/zoombar_0[89]\.png$"), "zoom bar icons TIS doesn't have"),
+    (re.compile(r"/document/frm/[^/]+/xhtml/footer\.bg\.jpg$"), "Flat Rate Manual footer image TIS doesn't have"),
     (re.compile(r"/ewd/intro/(guide|srs_caution)\.html$"), "intro pages this manual doesn't have"),
     (re.compile(r"/ewd/contents/system/compact/[^/]+\.xml$"), "compact diagrams (dl-html-ewd.sh copies the full one)"),
     (re.compile(r"/ewd/contents/connector/figrepair/-\.png$"), "placeholder for connectors with no photo"),
@@ -77,8 +81,34 @@ def read_manifest(path):
     return entries
 
 
+# Reference Information documents (dl-ref.sh): publication folder -> (label, rerun command), from the
+# toc.xml files tis-refsearch.py writes under t3Portal/external/en/ref/
+REF_DOCS = {}
+
+
+def load_ref_docs(root):
+    for toc in glob.glob(os.path.join(root, "t3Portal/external/en/ref/*/toc.xml")):
+        try:
+            xml = ET.parse(toc).getroot()
+        except (OSError, ET.ParseError):
+            continue
+        search = (xml.get("refsearch") or "").split("|")
+        if len(search) != 3:
+            continue
+        label = "ref/" + os.path.basename(os.path.dirname(toc))
+        cmd = "dl-ref.sh " + " ".join(shlex.quote(s) for s in search)
+        for it in xml.iter("item"):
+            parts = (it.get("href") or "").split("/")
+            if len(parts) > 5 and parts[2] == "document":
+                REF_DOCS["/".join(parts[:5]) + "/"] = (label, cmd)
+        REF_DOCS["/t3Portal/external/en/ref/%s/" % os.path.basename(os.path.dirname(toc))] = (label, cmd)
+
+
 def manual_of(path):
     """(label, rerun command) for the manual a path belongs to"""
+    for prefix, found in REF_DOCS.items():
+        if path.startswith(prefix):
+            return found
     m = EWD_RE.match(path)
     if m:
         return "ewdappu/%s%s" % m.groups(), "dl-html-ewd.sh %s" % m.group(2)
@@ -138,6 +168,7 @@ def main():
         sys.exit("No MANIFEST at %s.  Nothing has been downloaded with tis-fetch.py there yet." % manifest)
     entries = read_manifest(manifest)
     root = cfg["FSM_URLBASE"]
+    load_ref_docs(root)
     gone = [p for p, e in entries.items() if e[0] == "OK" and not on_disk(root, p)]
     # Not problems: files a script made locally instead (dl-html-ewd.sh's .svgz and compact diagrams), and
     # folder URLs an older dl-html-ewd.sh built from DOS line endings

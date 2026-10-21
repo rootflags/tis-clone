@@ -9,10 +9,10 @@ Not all features have been implemented for download.  This is a running list of 
 * Download Quick Training Guides (PDFs, but how do we get the list? These are not vehicle specific)
 * Download Service Campaigns (PDFs, but how do we get the list? The list returned is ALL vehicles, not just our model)
 * Download Accessory Docs (PDFs, but how do we get the list? The list returned is ALL vehicles, not just our model)
-* Owners Manual, Maintenance Schedule, Accessory/Nav owners manuals (under Reference Information tab)
-* Technician's References (under Reference Information tab)
-* "Warranty and Claims Processing" provides PDFs of the Flat Rate Manual
-* Service Operations/Parts provides "ASM and Parts Professional Reference" with Towing Specs, Fluids, 
+* ~~Owners Manual, Maintenance Schedule, Accessory/Nav owners manuals (under Reference Information tab)~~ (Done: dl-ref.sh)
+* ~~Technician's References (under Reference Information tab)~~ (Done: dl-ref.sh)
+* ~~"Warranty and Claims Processing" provides PDFs of the Flat Rate Manual~~ (Done for the older, to about 2015, Flat Rate Manuals: dl-ref.sh.  Newer vehicles' FRM is the separate FRM application, by division/model/year, still to do)
+* Service Operations/Parts provides "ASM and Parts Professional Reference" with Towing Specs, Fluids, (Partly done: dl-ref.sh downloads the ASM pages TIS lists for the vehicle, ie: General Vehicle Information and the engine oil chart)
 
 * Toyota Technical Training Guide downloads are generic, not for a specific vehicle, but might be desirable.
 
@@ -24,3 +24,4 @@ There are a lot of steps in the [HOWTO.md](HOWTO.md) file.
 * Setup should also test for dependencies and try to remediate/install or at least warn the user they have work to do before getting started.
 * The first few steps to log in and make any config changes should be guided
 * It would be better if we could just prompt the user with the vehicle division/model/year like the website does and handle EVERYTHING based on that input
+  * Next step: a tis-lookup.py that asks for Make, Model and Year (like the TIS search page) and prints the 5-character code, ie: 3900U; then tis-clone runs it when no code is given instead of failing
