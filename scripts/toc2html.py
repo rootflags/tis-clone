@@ -70,6 +70,8 @@ def main():
            '    <link rel="stylesheet" href="/framework/bootstrap.min.css">\n',
            '  </head>\n',
            '  <body>\n',
+           # Back to the front page (build-index.py's), out of the manual's frames
+           '<a class="nav-link" href="/index.html" target="_top">&lt; Home</a>\n',
            '\n',
            ' <ul class="nav flex-column flex-nowrap"><b>%s</b>\n' % topic,
            "  <ul class='nav flex-column flex-nowrap'>\n"]

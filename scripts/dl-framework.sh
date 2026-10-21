@@ -13,8 +13,9 @@
 LIST=${TISTMPDIR}/dl-framework.$$
 trap 'rm -f ${LIST}' EXIT
 
-# Set up local website framework CSS
-cp -a ${BASE}/website-framework/* ${FSM_URLBASE}/
+# Set up local website framework CSS.  Not website-framework/index.html: that's each manual's frame page
+# (dl-html-inc.sh copies it), and here it would replace build-index.py's front page.
+cp -a ${BASE}/website-framework/framework ${BASE}/website-framework/main.html ${FSM_URLBASE}/
 
 {
 	# Patched below
@@ -68,6 +69,10 @@ patch() {
 # ewd.js requires a change to force using the uncompressed SVG images.
 patch /t3Portal/external/en/ewdappu/system/js/ewd/ewd.js 'ElY.EsZ="/figsvg";ElY.Esa=".svg";ElY.Esb' \
 	's;ElY.EsZ="/fig";ElY.EsZ="/figsvg";g; s;ElY.Esa=".svgz";ElY.Esa=".svg";g; s;Ejx.EsZ="/fig";Ejx.EsZ="/figsvg";g; s;Ejx.Esa=".svgz";Ejx.Esa=".svg";g'
+
+# The wiring diagram viewer gets a link back to the front page, left of its Back button
+patch /t3Portal/ewdappu/index.jsp 'title="Home"' \
+	's|<td class="left-align" id="back"|<td style="vertical-align:top;"><a href="/index.html" target="_top" title="Home" style="font:bold 9pt Arial, sans-serif; color:black; text-decoration:none; white-space:nowrap; padding:0px 8px;">\&lt; Home</a></td>&|'
 
 patch /t3Portal/framework/skins/t3/js/all-t3.js '//self.AJAX.setRequestHeader("Connection"' \
 	's;self.AJAX.setRequestHeader("Connection";//self.AJAX.setRequestHeader("Connection";g'
