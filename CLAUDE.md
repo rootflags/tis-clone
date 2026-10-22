@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A collection of POSIX shell and Python scripts that mirror the Toyota/Lexus/Scion Factory Service Manual (FSM) from TIS (https://techinfo.toyota.com) for personal offline use, then post-process it into a locally browsable website and optional PDFs. There is no build system, package manager, or test suite. The scripts run against the live site and need an authenticated, paid TIS session. End-user steps are in `HOWTO.md`. Known gaps and wishlist items are in `FUTURE.md`.
+A collection of POSIX shell and Python scripts that mirror the Toyota/Lexus/Scion Factory Service Manual (FSM) from TIS (https://techinfo.toyota.com) for personal offline use, then post-process it into a locally browsable website and optional PDFs. There is no build system, package manager, or test suite. The scripts run against the live site and need an authenticated, paid TIS session. End-user steps are in `HOWTO.md`.
 
 ## Configuration model (read this first)
 
