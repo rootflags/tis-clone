@@ -91,6 +91,14 @@
 9. Create Navigation.  Rerun it after downloading more manuals:
 * For HTML docs: ```~/tis-clone/scripts/build-index.py > $DOWNLOAD_TO/techinfo.toyota.com/index.html```
 
+* Search: each manual's menu gets a search box at the bottom once it has a search index.  Make the indexes, then remake the menus so they show the box (tis-clone does both):
+
+         ~/tis-clone/scripts/build-search.py
+         cd $DOWNLOAD_TO/techinfo.toyota.com
+         for F in $(find t3Portal/external -name toc.html); do ~/tis-clone/scripts/toc2html.py ${F%.html}.xml > $F; done
+
+  Type a word, a DTC (P0420) or the start of one (P04) and the menu shows the pages with every word typed: title, section and the text around the match, best matches first.  Click one to open it; the menu closes whatever was open and opens to that page, and both are shown in bold.  The menu stays above it; clear the box (or press Esc) to hide the results.  Reference Information, bulletins and the Flat Rate Manual are searched by title.  It all runs in the browser, so it works on any web server, and nothing extra loads until you click the search box.  To take it out again, delete the manuals' `search` folders and remake the menus the same way.
+
 * For PDF docs: ```~/tis-clone/scripts/build-pdfidx.sh > $DOWNLOAD_TO/techinfo.toyota.com/PDFs/index.html```
 
 10. If you have an existing version that you're updating or adding additional vehicles to, merge into existing site.  tis-merge.sh copies the current folder into the target (with rsync, without deleting anything), so run it from the download's techinfo.toyota.com folder:
@@ -154,6 +162,7 @@ Checking and cleaning up
 * `tis-urlstripper.sh [FOLDER]` - remove absolute TIS links so the copy works on your own web server (step 7).
 
 Building the website and PDFs
+* `build-search.py [--force] [FOLDER | toc.xml ...]` - make each manual's search index (`search/` next to its toc.xml) for the search box in its menu (`website-framework/framework/tis-search.js`); manuals whose index is up to date are skipped (step 9).
 * `build-index.py [FOLDER] > index.html` - front page listing every downloaded manual (step 9), plus a Fluid Capacities list linking each repair manual's service data pages that give fluid capacities (on newer manuals one MAINTENANCE page per model year range; on older ones the engine cooling and lubrication, transfer, ... pages).
 * `tis-serve.py [-p PORT] [-b ADDRESS] [FOLDER]` - serve the download for browsing (see below).  If the port is in use, it uses the next free one.
 * `tis-mkpdfs.sh IDENTIFIER` - make the PDFs (step 8), using `tis-pdfbook.py` for each manual and Ghostscript for the wiring diagrams; `build-pdfidx.sh` makes the PDF index page.

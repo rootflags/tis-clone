@@ -334,6 +334,10 @@ fi
 echo ""
 echo "########## Building the website"
 ${SCRIPT_BASE}/tis-urlstripper.sh
+# Each manual's search index (only the ones that changed), and tis-search.js, which uses it
+cp -a ${BASE}/website-framework/framework ${FSM_URLBASE}/
+echo "Search indexes:"
+${SCRIPT_BASE}/build-search.py ${FSM_URLBASE}
 # Remake every manual's navigation, so ones downloaded by an older tis-clone get its changes (ie: the Home link)
 find ${FSM_URLBASE}/t3Portal/external -name toc.html | while read -r F; do
 	[ -f "${F%.html}.xml" ] && ${SCRIPT_BASE}/toc2html.py "${F%.html}.xml" > "${F}.new" && mv -f "${F}.new" "${F}"

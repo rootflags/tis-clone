@@ -4,15 +4,26 @@
 #
 # The page is a collapsible Bootstrap menu, three or four levels deep, whose links open each document in
 # the manual_frame of the manual's index.html.  dl-html-inc.sh runs this after every download.  Line 2 of
-# the output is the manual's title, which build-index.py lists on the front page.
+# the output is the manual's title, which build-index.py lists on the front page.  If build-search.py has
+# made the manual a search index (search/ next to toc.xml), the menu ends with a search box; clicking it
+# loads /framework/tis-search.js, which shows the results in place of the menu.
 #
 # Usage:
 #   toc2html.py toc.xml > toc.html
 #
 
 import html
+import os
 import sys
 import xml.etree.ElementTree as ET
+
+# The search box; tis-search.js only loads when it's first clicked, so the menu opens as fast as without it
+SEARCH_BOX = ('<div id="tis-search" data-index="search/" style="padding:12px 16px 8px 16px;">'
+              '<input id="tis-search-q" type="search" class="form-control form-control-sm" '
+              'placeholder="Search this manual" autocomplete="off" onfocus="if (!window.tisSearchLoading) { '
+              'window.tisSearchLoading = 1; var s = document.createElement(\'script\'); '
+              's.src = \'/framework/tis-search.js\'; document.head.appendChild(s); }"></div>\n'
+              '<div id="tis-search-results" style="display:none"></div>\n')
 
 
 def name(node):
@@ -71,10 +82,10 @@ def main():
            '  </head>\n',
            '  <body>\n',
            # Back to the front page (build-index.py's), out of the manual's frames
-           '<a class="nav-link" href="/index.html" target="_top">&lt; Home</a>\n',
-           '\n',
-           ' <ul class="nav flex-column flex-nowrap"><b>%s</b>\n' % topic,
-           "  <ul class='nav flex-column flex-nowrap'>\n"]
+           '<a class="nav-link" href="/index.html" target="_top">&lt; Home</a>\n']
+    out += ['<div id="tis-menu">\n',
+            ' <ul class="nav flex-column flex-nowrap"><b>%s</b>\n' % topic,
+            "  <ul class='nav flex-column flex-nowrap'>\n"]
     sub1 = sub2 = sub3 = 0
     for topkey in sorted(nav):
         sub1 += 1
@@ -104,6 +115,9 @@ def main():
             out.append("      </ul></div></li>\n")
         out.append("    </ul></div>\n")
     out.append("  </ul>\n")
+    out.append("</div>\n")
+    if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), "search", "meta.js")):
+        out.append(SEARCH_BOX)
     out.append('\n<script src="/framework/jquery-3.4.1.min.js"></script>\n'
                '<script src="/framework/popper.min.js"></script>\n'
                '<script src="/framework/bootstrap.min.js"></script>\n'
