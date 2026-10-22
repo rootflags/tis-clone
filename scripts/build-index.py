@@ -5,9 +5,10 @@
 # Lists each manual's toc.html (made by toc2html.py) and each wiring diagram's termdata.xml, sorted by
 # title, plus a link to PDFs/index.html if there are PDFs.  tis-clone runs it after downloading.
 #
-# It also lists each repair manual's fluid capacities: the SPECIFICATIONS ... SERVICE DATA pages that give
-# a capacity (newer manuals have one MAINTENANCE page per model year range with all of them; older ones
-# spread them over the engine cooling and lubrication, transmission, transfer, differential, ... pages).
+# It also writes fluids.html, listing each repair manual's fluid capacities: the SPECIFICATIONS ... SERVICE
+# DATA pages that give a capacity (newer manuals have one MAINTENANCE page per model year range with all of
+# them; older ones spread them over the engine cooling and lubrication, transmission, transfer, differential,
+# ... pages).  The front page links to it after the manuals; with no capacity pages there's no fluids.html.
 #
 # Usage:
 #   build-index.py [FSM_URLBASE] > $FSM_URLBASE/index.html
@@ -89,29 +90,45 @@ def fluid_pages(root):
     return found
 
 
+def fluids_page(fluids):
+    out = ['<!DOCTYPE html><html><head><title>Fluid Capacities</title>\n'
+           '<meta charset="utf-8">\n'
+           '<meta name="viewport" content="width=device-width">\n'
+           '<link rel="stylesheet" href="/framework/bootstrap.min.css"></head>\n'
+           '<body>\n'
+           '<a class="nav-link" href="/index.html">&lt; Home</a>\n'
+           '<div class="nav-link"><b>Fluid Capacities</b><br>\n']
+    for title, pages in fluids:
+        out.append("<br>%s:<br>\n" % html.escape(title, quote=False))
+        for label, link in pages:
+            out.append("&nbsp;&nbsp;<a href='%s'>%s</a><br>\n" % (html.escape(link), html.escape(label, quote=False)))
+    out.append('</div>\n</body></html>')
+    return "".join(out)
+
+
 def main():
     root = sys.argv[1] if len(sys.argv) > 1 else fsm_urlbase()
+    found = manuals(root)
+    fluids = fluid_pages(root)
+    page = os.path.join(root, "fluids.html")
+    if fluids:
+        with open(page, "w", encoding="utf-8") as fh:
+            fh.write(fluids_page(fluids))
+        found.append(("Fluid Capacities", "fluids.html"))       # last, after the manuals
+    elif os.path.exists(page):
+        os.remove(page)
     out = ['<head><link rel="stylesheet" href="/framework/bootstrap.min.css"></head>\n'
            '<body style="padding:0px; margin:0px;">\n'
            '<img src="t3Portal/resources/images/globals/header/headerbar.bg.blu.gif" '
            'style="width:100%; height:40px; margin:0px; border:0px; padding:0px">\n'
            '<div class="nav-link">\n']
-    for title, link in manuals(root):
+    for title, link in found:
         out.append("<a href='/%s'>%s</a><br>\n" % (html.escape(link), title))
     out.append('</div>')
-    fluids = fluid_pages(root)
-    if fluids:
-        out.append('<div class="nav-link"><br><b>Fluid Capacities</b><br>\n')
-        for title, pages in fluids:
-            out.append("%s:<br>\n" % html.escape(title, quote=False))
-            for label, link in pages:
-                out.append("&nbsp;&nbsp;<a href='%s'>%s</a><br>\n" % (html.escape(link), html.escape(label, quote=False)))
-        out.append('</div>')
     if os.path.isdir(os.path.join(root, "PDFs")):
         out.append('<div class="nav-link"><br><a href="PDFs/index.html">PDF File Index</a></div>')
     out.append('</body>')
     sys.stdout.buffer.write("".join(out).encode("utf-8"))
-
 
 if __name__ == "__main__":
     main()

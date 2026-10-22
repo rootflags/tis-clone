@@ -166,7 +166,7 @@ Checking and cleaning up
 
 Building the website and PDFs
 * `build-search.py [--force] [FOLDER | toc.xml ...]` - make each manual's search index (`search/` next to its toc.xml) for the search box in its menu (`website-framework/framework/tis-search.js`); manuals whose index is up to date are skipped (Advanced F).
-* `build-index.py [FOLDER] > index.html` - front page listing every downloaded manual (Advanced F), plus a Fluid Capacities list linking each repair manual's service data pages that give fluid capacities (on newer manuals one MAINTENANCE page per model year range; on older ones the engine cooling and lubrication, transfer, ... pages).
+* `build-index.py [FOLDER] > index.html` - front page listing every downloaded manual (Advanced F), plus a Fluid Capacities entry, a page it writes next to it (fluids.html) linking each repair manual's service data pages that give fluid capacities (on newer manuals one MAINTENANCE page per model year range; on older ones the engine cooling and lubrication, transfer, ... pages).
 * `tis-serve.py [-p PORT] [-b ADDRESS] [FOLDER]` - serve the download for browsing (see below).  If the port is in use, it uses the next free one.
 * `tis-mkpdfs.sh IDENTIFIER` - make the PDFs (Advanced E), using `tis-pdfbook.py` for each manual and Ghostscript for the wiring diagrams; `build-pdfidx.sh` makes the PDF index page.
 * `tis-pdfbook.py TOC.XML OUT.PDF [-j JOBS]` - make one PDF of a manual, with working internal links and bookmarks from its toc.xml.
