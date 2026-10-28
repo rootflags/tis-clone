@@ -278,11 +278,19 @@ fi
 
 ## Download each manual, then the shared website framework
 CODES=""
+PDFS=""
 SKIPPED=""
 for T in ${TODO} dl-framework.sh:; do
 	SCRIPT=${T%%:*}
 	C=${T#*:}
 	case ${SCRIPT} in dl-ref.sh|dl-bulletins.sh|tis-frm.py) ;; *) case " ${CODES} " in *" ${C} "*) ;; *) [ x${C} != x ] && CODES="${CODES} ${C}" ;; esac ;; esac
+	# The PDFs are only made for the manuals this command downloads ("CODE:section")
+	case ${SCRIPT} in
+		dl-html-rm.sh) PDFS="${PDFS} ${C}:rm" ;;
+		dl-html-bm.sh|dl-html-cr.sh|dl-pdf-br.sh) PDFS="${PDFS} ${C}:bm" ;;
+		dl-html-nm.sh|dl-html-ncf.sh) PDFS="${PDFS} ${C}:nm" ;;
+		dl-html-ewd.sh|dl-pdf-ewd.sh|dl-pdf-em.sh|dl-pdf-wd.sh) PDFS="${PDFS} ${C}:ewd" ;;
+	esac
 	echo ""
 	if done_before ${T}; then
 		echo "########## ${SCRIPT} ${C}: finished last time, skipping"
@@ -352,7 +360,7 @@ if [ ${PDF} = 1 ]; then
 	for C in ${CODES}; do
 		if done_before pdf:${C}; then
 			echo "PDFs for ${C}: finished last time, skipping"
-		elif ${SCRIPT_BASE}/tis-mkpdfs.sh ${C}; then
+		elif ${SCRIPT_BASE}/tis-mkpdfs.sh ${C} `for P in ${PDFS}; do case ${P} in ${C}:*) echo ${P#*:} ;; esac; done`; then
 			echo "DONE pdf:${C}" >> ${STATE}
 		else
 			FAILED=1

@@ -348,7 +348,7 @@ def main():
     global ROOT
     ap = argparse.ArgumentParser(description="Save a vehicle's Flat Rate Manual from TIS's Flat Rate Manual application")
     ap.add_argument("vehicle", nargs=3, metavar="DIVISION MODEL YEARS", help="ie: LEXUS LX600 2024 (YEARS: 2024, 2022-2024, 2022,2024)")
-    ap.add_argument("--wait", type=float, default=1.0, help="seconds between requests (default 1)")
+    ap.add_argument("--wait", type=float, help="seconds between requests (default TIS_WAIT in tis-clone.cfg, or 0.01)")
     ap.add_argument("--pdf", action="store_true", help="make PDFs of the saved Flat Rate Manuals (no TIS requests)")
     args = ap.parse_args()
 
@@ -357,7 +357,7 @@ def main():
     ROOT = os.path.realpath(cfg["FSM_URLBASE"])
     if args.pdf:
         return make_pdfs(args.vehicle)
-    rs = tis_refsearch.RefSearch(cfg, args.wait)
+    rs = tis_refsearch.RefSearch(cfg, tis_refsearch.tis_fetch.wait_of(cfg, args.wait))
     division, model = args.vehicle[0].upper(), args.vehicle[1]
     match = [m for m in rs.vehicles("model", division) if m.lower() == model.lower()]
     if not match:

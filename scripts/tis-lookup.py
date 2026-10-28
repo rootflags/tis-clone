@@ -199,7 +199,7 @@ def main():
     ap.add_argument("--args", action="store_true", help="print only the tis-clone arguments")
     ap.add_argument("--ref-for", metavar="TOC.XML", help="ask for the model year of the vehicle a downloaded manual is for "
                     "and print its --ref value (MAKE:MODEL:YEAR)")
-    ap.add_argument("--wait", type=float, default=1.0, help="seconds between requests (default 1)")
+    ap.add_argument("--wait", type=float, help="seconds between requests (default TIS_WAIT in tis-clone.cfg, or 0.01)")
     args = ap.parse_args()
     if len(args.vehicle) > 3:
         ap.error("give at most MAKE MODEL YEAR")
@@ -210,7 +210,7 @@ def main():
 
     cfg = tis_refsearch.tis_fetch.load_cfg()
     os.makedirs(cfg["DOWNLOAD_TO"], exist_ok=True)
-    rs = tis_refsearch.RefSearch(cfg, args.wait)
+    rs = tis_refsearch.RefSearch(cfg, tis_refsearch.tis_fetch.wait_of(cfg, args.wait))
     if args.ref_for:
         try:
             ref = ask_ref(args.ref_for, rs)

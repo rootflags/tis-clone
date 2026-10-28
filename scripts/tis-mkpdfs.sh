@@ -2,6 +2,9 @@
 #
 # Generate consolidated PDFs from HTML files for newer TIS structure
 #
+# With SECTIONs (rm, bm, nm, ewd: what tis-clone downloaded), only those manuals of the code; without, all
+# of them.  A PDF newer than everything it's made from is skipped (tis-pdfbook.py checks its own).
+#
 
 . ${HOME}/.tis/tis-clone.cfg
 . ${SCRIPT_BASE}/tis-log.sh
@@ -18,13 +21,26 @@ if [ $? != 0 ]; then
 fi
 
 if [ x$1 = x ]; then
-	echo "Syntax: $0 [GSIC_CODE]"
+	echo "Syntax: $0 GSIC_CODE [rm] [bm] [nm] [ewd]"
 	echo "    ie: $0 27J0U"
 	exit 1
 fi
 
 
 GSICCODE=$1
+shift
+SECTIONS=" $* "
+# Is section $1 wanted?
+wanted() {
+	[ "x${SECTIONS}" = "x  " ] && return 0
+	case "${SECTIONS}" in *" $1 "*) return 0 ;; esac
+	return 1
+}
+
+# Is PDF $1 newer than every file in folder $2?
+up_to_date() {
+	[ -f "$1" ] && [ -z "`find "$2" -newer "$1" -type f | head -1`" ]
+}
 PDFDIR=${FSM_URLBASE}/PDFs
 mkdir -p $PDFDIR
 
@@ -46,6 +62,14 @@ do
 		EM*|EWD*|WD*) TYPE=ElectricalWiringDiagram ;;
 		*) TYPE=Manual ;;
 	esac
+	case ${DOCID} in
+		RM*) S=rm ;;
+		NM*|NCF*) S=nm ;;
+		BM*|CR*|BR*) S=bm ;;
+		EM*|EWD*|WD*) S=ewd ;;
+		*) S="" ;;
+	esac
+	wanted ${S} || continue
 	if [ x"${MODEL}" = x ]; then
 		MODEL=`${SCRIPT_BASE}/toc2topic.py ${TOC}`
 		mkdir -p "${PDFDIR}/${MODEL}"
@@ -54,6 +78,18 @@ do
 	${SCRIPT_BASE}/tis-pdfbook.py ${TOC} "${PDFDIR}/${MODEL}/${TYPE}-${DOCID}.pdf" || FAILED=1
 done
 
+# gs_join folder Name: join contents/folder/pdf/*.pdf (or contents/Name/...) unless already done
+gs_join() {
+	D=${EWD}/$1
+	[ -d ${D} ] || D=${EWD}/$2
+	OUT="${PDFDIR}/${MODEL}/ElectricalWiringDiagrams-EM${GSICCODE}-$2.pdf"
+	if up_to_date "${OUT}" ${D}/pdf; then
+		echo "    up to date, skipping"
+	else
+		${GS} -sOutputFile="${OUT}.part" ${D}/pdf/*.pdf && mv -f "${OUT}.part" "${OUT}"
+	fi
+}
+
 # *** EVERYTHING BELOW HERE NEEDS WORK
 ###
 ### Figure out Wiring Diagram folder structure
@@ -61,6 +97,7 @@ done
 # *** DIR PATH IS BROKEN, NEED TO ADJUST FRO M$XHTML *** #$
 for XHTML in `find . -type d -name xhtml|grep 'external.*/xhtml$'|grep ${GSICCODE}`
 do
+	wanted ewd || continue
 	EWD_BASE=`echo ${FSM_URLBASE}/${XHTML}|sed -e 's:/xhtml$::g'`
 	#if [ -d t3Portal/external/en/ewdappu/EM${GSICCODE}/ewd/contents ]; then
 	if [ -d $EWD_BASE/ewd/contents ]; then
@@ -79,32 +116,16 @@ do
 		mkdir -p "${PDFDIR}/${MODEL}"
 	fi
 	echo "* Overall PDFs"
-	if [ -d ${EWD}/overall ]; then
-		${GS} -sOutputFile=${PDFDIR}/"${MODEL}"/ElectricalWiringDiagrams-EM${GSICCODE}-Overall.pdf ${EWD}/overall/pdf/*.pdf
-	else
-		${GS} -sOutputFile=${PDFDIR}/"${MODEL}"/ElectricalWiringDiagrams-EM${GSICCODE}-Overall.pdf ${EWD}/Overall/pdf/*.pdf
-	fi
+	gs_join overall Overall
 
 	echo "* Relay PDFs"
-	if [ -d ${EWD}/relay ]; then
-		${GS} -sOutputFile=${PDFDIR}/"${MODEL}"/ElectricalWiringDiagrams-EM${GSICCODE}-Relay.pdf ${EWD}/relay/pdf/*.pdf
-	else
-		${GS} -sOutputFile=${PDFDIR}/"${MODEL}"/ElectricalWiringDiagrams-EM${GSICCODE}-Relay.pdf ${EWD}/Relay/pdf/*.pdf
-	fi
+	gs_join relay Relay
 
 	echo "* Routing PDFs"
-	if [ -d ${EWD}/routing ]; then
-		${GS} -sOutputFile=${PDFDIR}/"${MODEL}"/ElectricalWiringDiagrams-EM${GSICCODE}-Routing.pdf ${EWD}/routing/pdf/*.pdf
-	else
-		${GS} -sOutputFile=${PDFDIR}/"${MODEL}"/ElectricalWiringDiagrams-EM${GSICCODE}-Routing.pdf ${EWD}/Routing/pdf/*.pdf
-	fi
+	gs_join routing Routing
 
 	echo "* System PDFs"
-	if [ -d ${EWD}/system ]; then
-		${GS} -sOutputFile=${PDFDIR}/"${MODEL}"/ElectricalWiringDiagrams-EM${GSICCODE}-System.pdf ${EWD}/system/pdf/*.pdf
-	else
-		${GS} -sOutputFile=${PDFDIR}/"${MODEL}"/ElectricalWiringDiagrams-EM${GSICCODE}-System.pdf ${EWD}/System/pdf/*.pdf
-	fi
+	gs_join system System
 done
 
 # Regenerate PDF index file(s)

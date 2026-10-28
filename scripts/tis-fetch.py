@@ -17,6 +17,8 @@
 # unless TIS_SKIP_FAILED=1 is set (tis-clone --continue sets it, to get past files TIS can't send).
 # Delete a path's lines (or the whole file) to force a refetch.
 #
+# It waits TIS_WAIT seconds (tis-clone.cfg; default 0.01) between requests; --wait overrides both.
+#
 # Usage:
 #   tis-fetch.py URL_OR_PATH ...           ie: tis-fetch.py /t3Portal/external/en/rm/RM30B0U/toc.xml
 #   tis-fetch.py -i FILE                   one URL or /t3Portal/... path per line ("-" for stdin)
@@ -43,6 +45,7 @@ from tislog import tee_to_log
 TESTPAGE = "/t3Portal/staticcontent/en/techinfo/docs/glossary.pdf"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0"
 EXIT_SESSION = 75
+WAIT = 0.01                             # seconds between requests, if tis-clone.cfg has no TIS_WAIT
 
 # Signs that TIS sent us to its login page instead of the document we asked for
 LOGIN_URL_RE = re.compile(r"concurrentLoginFailure|techInfoPortal/login|/openam/|prelogin", re.I)
@@ -73,10 +76,20 @@ class SessionDead(Exception):
 
 def load_cfg():
     """Read settings from ~/.tis/tis-clone.cfg the same way the shell scripts do"""
-    names = ["COOKIES", "DOWNLOAD_TO", "FSM_URLBASE", "WEBSITE", "SCRIPT_BASE", "TIS_LOG"]
+    names = ["COOKIES", "DOWNLOAD_TO", "FSM_URLBASE", "WEBSITE", "SCRIPT_BASE", "TIS_LOG", "TIS_WAIT"]
     script = '. "$HOME/.tis/tis-clone.cfg" && printf "%s\\0" ' + " ".join('"$%s"' % n for n in names)
     out = subprocess.run(["sh", "-c", script], capture_output=True, check=True).stdout
     return dict(zip(names, out.decode().split("\0")))
+
+
+def wait_of(cfg, wait):
+    """Seconds between requests: --wait if given, else TIS_WAIT from tis-clone.cfg, else WAIT"""
+    if wait is not None:
+        return wait
+    try:
+        return float(cfg["TIS_WAIT"]) if cfg.get("TIS_WAIT") else WAIT
+    except ValueError:
+        sys.exit("TIS_WAIT=%s in ~/.tis/tis-clone.cfg isn't a number of seconds" % cfg["TIS_WAIT"])
 
 
 class LinkParser(html.parser.HTMLParser):
@@ -477,7 +490,8 @@ def main():
     ap.add_argument("urls", nargs="*", help="URLs or /t3Portal/... paths")
     ap.add_argument("-i", "--input", help='file with one URL or path per line ("-" for stdin)')
     ap.add_argument("--manifest", help="manifest file (default $DOWNLOAD_TO/MANIFEST)")
-    ap.add_argument("--wait", type=float, default=0.5, help="seconds between requests (default 0.5)")
+    ap.add_argument("--wait", type=float, help="seconds between requests (default TIS_WAIT in tis-clone.cfg, or %s)"
+                    % WAIT)
     ap.add_argument("--no-requisites", dest="requisites", action="store_false",
                     help="don't fetch the images, stylesheets and scripts pages refer to")
     ap.add_argument("--base", help="resolve links in HTML pages against this URL instead of the page's own "
@@ -492,6 +506,7 @@ def main():
 
     cfg = load_cfg()
     tee_to_log(cfg)                     # before reading -i -, so the logged run gets stdin
+    args.wait = wait_of(cfg, args.wait)
     if args.check:
         os.makedirs(cfg["DOWNLOAD_TO"], exist_ok=True)
         f = Fetcher(cfg, args)

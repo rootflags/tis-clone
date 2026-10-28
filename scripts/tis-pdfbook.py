@@ -18,8 +18,11 @@
 #
 # Older manuals whose pages are just a pointer to a PDF use that PDF as is.
 #
+# An OUT.PDF newer than the toc.xml and every file in the manual's page folders (pages, images, PDFs) is up
+# to date and isn't made again, unless --force (or its pdfwork folder is gone, ie: WORK_VERSION changed).
+#
 # Usage:
-#   tis-pdfbook.py TOC.XML OUT.PDF [-j JOBS] [--limit N]
+#   tis-pdfbook.py TOC.XML OUT.PDF [-j JOBS] [--limit N] [--force]
 #     ie: tis-pdfbook.py $FSM_URLBASE/t3Portal/external/en/rm/RM30B0U/toc.xml RepairManual-RM30B0U.pdf
 #
 # Requirements: wkhtmltopdf (the "with patched qt" build), python3-pikepdf
@@ -105,6 +108,27 @@ def read_toc(toc_file):
     return (root.findtext("name") or "").strip(), tree, docs
 
 
+def up_to_date(out, toc_file, docs, root, work):
+    """Is OUT newer than toc.xml and everything in the folders the pages are in (ie: document/rm/RM30B0U/)?"""
+    if not os.path.isfile(out) or not os.path.isdir(work):
+        return False
+    made = os.path.getmtime(out)
+    if os.path.getmtime(toc_file) >= made:
+        return False
+    # A page's folder is .../xhtml; the one above it also holds its images (and PDFs).  The Flat Rate
+    # Manual's is the toc.xml folder, where the website's toc.html, index.html and search/ are remade.
+    folders = {os.path.dirname(os.path.dirname(os.path.join(root, d.lstrip("/")))) for d in docs}
+    for folder in folders:
+        for dirpath, dirnames, filenames in os.walk(folder):
+            if dirpath == folder:
+                dirnames[:] = [d for d in dirnames if d != "search"]
+                filenames = [f for f in filenames if f not in ("toc.html", "index.html")]
+            for f in filenames:
+                if os.path.getmtime(os.path.join(dirpath, f)) >= made:
+                    return False
+    return True
+
+
 def page_pdf(doc, root, base, work):
     """Make the PDF for one page (or find the PDF it points to).  Returns (pdf file, problem or None)"""
     html = os.path.join(root, doc.lstrip("/"))
@@ -185,6 +209,7 @@ def main():
     ap.add_argument("out", help="PDF to write")
     ap.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 2, help="pages to render at once")
     ap.add_argument("--limit", type=int, help="only the first N pages (for testing)")
+    ap.add_argument("--force", action="store_true", help="make it even if OUT is up to date")
     args = ap.parse_args()
 
     cfg = load_cfg()
@@ -195,6 +220,9 @@ def main():
         docs = docs[:args.limit]
     work = os.path.join(cfg["DOWNLOAD_TO"], "pdfwork", WORK_VERSION,
                         os.path.basename(os.path.dirname(os.path.abspath(args.toc))))
+    if not args.force and not args.limit and up_to_date(args.out, args.toc, docs, root, work):
+        print("%s: %s is up to date, skipping" % (title, args.out), flush=True)
+        return 0
     os.makedirs(work, exist_ok=True)
 
     server = tis_serve.start_server(root, "127.0.0.1", 8080, PrintHandler)

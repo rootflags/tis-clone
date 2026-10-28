@@ -314,13 +314,13 @@ def main():
     ap.add_argument("--rerun", default="dl-ref.sh", help="the script that remakes the --toc folder, for tis-report.py (default dl-ref.sh)")
     ap.add_argument("--models", metavar="DIVISION", help="list the models TIS knows for a division")
     ap.add_argument("--years", metavar="DIVISION", help="list the model years TIS knows for a division")
-    ap.add_argument("--wait", type=float, default=1.0, help="seconds between requests (default 1)")
+    ap.add_argument("--wait", type=float, help="seconds between requests (default TIS_WAIT in tis-clone.cfg, or 0.01)")
     args = ap.parse_args()
 
     cfg = tis_fetch.load_cfg()
     tee_to_log(cfg)
     os.makedirs(cfg["DOWNLOAD_TO"], exist_ok=True)
-    rs = RefSearch(cfg, args.wait)
+    rs = RefSearch(cfg, tis_fetch.wait_of(cfg, args.wait))
 
     if args.models or args.years:
         for v in rs.vehicles("model" if args.models else "yearreverse", (args.models or args.years).upper()):

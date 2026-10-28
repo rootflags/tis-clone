@@ -168,8 +168,8 @@ Building the website and PDFs
 * `build-search.py [--force] [FOLDER | toc.xml ...]` - make each manual's search index (`search/` next to its toc.xml) for the search box in its menu (`website-framework/framework/tis-search.js`); manuals whose index is up to date are skipped (Advanced F).
 * `build-index.py [FOLDER] > index.html` - front page listing every downloaded manual (Advanced F), plus a Fluid Capacities entry, a page it writes next to it (fluids.html) linking each repair manual's service data pages that give fluid capacities (on newer manuals one MAINTENANCE page per model year range; on older ones the engine cooling and lubrication, transfer, ... pages).
 * `tis-serve.py [-p PORT] [-b ADDRESS] [FOLDER]` - serve the download for browsing (see below).  If the port is in use, it uses the next free one.
-* `tis-mkpdfs.sh IDENTIFIER` - make the PDFs (Advanced E), using `tis-pdfbook.py` for each manual and Ghostscript for the wiring diagrams; `build-pdfidx.sh` makes the PDF index page.
-* `tis-pdfbook.py TOC.XML OUT.PDF [-j JOBS]` - make one PDF of a manual, with working internal links and bookmarks from its toc.xml.
+* `tis-mkpdfs.sh IDENTIFIER [rm] [bm] [nm] [ewd]` - make the PDFs (Advanced E), using `tis-pdfbook.py` for each manual and Ghostscript for the wiring diagrams; `build-pdfidx.sh` makes the PDF index page.  With sections, only those manuals of the code (tis-clone passes the ones it downloaded).  A PDF that's newer than everything it's made from is skipped, so rerunning it only remakes what changed.
+* `tis-pdfbook.py TOC.XML OUT.PDF [-j JOBS] [--force]` - make one PDF of a manual, with working internal links and bookmarks from its toc.xml.  It skips an OUT.PDF that's newer than the manual's files, unless `--force`.
 * `repdf PDF ...` - split and re-merge PDF files.
 * `toc2html.py toc.xml > toc.html` - navigation page for one manual (run by the downloaders).
 * `toc2topic.py toc.xml` - print the vehicle a manual is for, ie: `TOYOTA 2013-2018 RAV4` (tis-mkpdfs.sh uses it to name the PDF folder).
