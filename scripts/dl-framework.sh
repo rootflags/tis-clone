@@ -3,8 +3,8 @@
 # Download all of the website framework
 #
 # Uses tis-fetch.py (see dl-html-ewd.sh), so rerunning it resumes and skips files already in the
-# MANIFEST.  The ewd.js and all-t3.js patches below are redone on every run from the saved .orig, so
-# this can run before or after the wiring diagram download.
+# MANIFEST.  The ewd.js, svgfig.js, index.jsp and all-t3.js patches below are redone on every run from
+# the saved .orig, so this can run before or after the wiring diagram download.
 #
 
 . ${HOME}/.tis/tis-clone.cfg
@@ -73,6 +73,12 @@ patch /t3Portal/external/en/ewdappu/system/js/ewd/ewd.js 'ElY.EsZ="/figsvg";ElY.
 # The wiring diagram viewer gets a link back to the front page, left of its Back button
 patch /t3Portal/ewdappu/index.jsp 'title="Home"' \
 	's|<td class="left-align" id="back"|<td style="vertical-align:top;"><a href="/index.html" target="_top" title="Home" style="font:bold 9pt Arial, sans-serif; color:black; text-decoration:none; white-space:nowrap; padding:0px 8px;">\&lt; Home</a></td>&|'
+
+# Safari (Mac and every iOS browser) reloads an embedded SVG each time its <embed>'s width or height is
+# set, even to the same value.  The viewer sets them after every load, so Safari reloads forever and the
+# wiring diagram page stays blank.  Only set them when they change.
+patch /t3Portal/external/en/ewdappu/system/js/ewd/fig/svgfig.js 'if(this.EtV.getAttribute("width")!=Evw+"px")' \
+	's|EtP.prototype.Evy=function(Evw,Elw){try{this.EtV.setAttribute("width",Evw+"px");this.EtV.setAttribute("height",Elw+"px");|EtP.prototype.Evy=function(Evw,Elw){try{if(this.EtV.getAttribute("width")!=Evw+"px"){this.EtV.setAttribute("width",Evw+"px");}if(this.EtV.getAttribute("height")!=Elw+"px"){this.EtV.setAttribute("height",Elw+"px");}|'
 
 patch /t3Portal/framework/skins/t3/js/all-t3.js '//self.AJAX.setRequestHeader("Connection"' \
 	's;self.AJAX.setRequestHeader("Connection";//self.AJAX.setRequestHeader("Connection";g'
