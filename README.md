@@ -9,7 +9,7 @@ This has been tested on Ubuntu Linux 20.04 LTS but should work on most Linux sys
 * /bin/sh (tested with bash)
 * Numerous commands which should be part of your Linux distribution: awk, cat, cp, cut, find, grep, head, ls, mkdir, mv, rm, sed, sort, tr
 
-`./setup.sh` checks all of these and prints the command that installs whatever is missing on your system (and offers to run it).
+`./setup.sh` checks all of these and prints the command that installs whatever is missing on your system (and offers to run it).  The scripts use the system's python3; no virtualenv (venv) or pip install of tis-clone itself is needed.
 * curl (used by tis-login.sh).  "apt install curl".
 * bash (tis-login.sh), gzip and xargs.
 * Python 3 (tis-login.sh, tis-serve.py and the other tools) with the requests module for the downloader, tis-fetch.py.  "apt install python3 python3-requests".  Perl is no longer needed.

@@ -3,6 +3,8 @@
 
          git clone https://github.com/rootflags/tis-clone ~/tis-clone
 
+   The commands in this file assume `~/tis-clone`.  If you put it somewhere else, use that folder instead (setup.sh prints the commands with the right folder when it's done).
+
 2. Run the setup script:
 
          cd ~/tis-clone && ./setup.sh
@@ -12,7 +14,9 @@
    * optionally your TIS login and 2FA method, so you don't have to type them each time (the file is then kept private);
    * if you publish the download on a website, its address (MYURL, where links in a PDF to another manual go) and folder (MYURL_BASE, only used by the older PDF scripts).
 
-   Then it checks the software tis-clone needs, shows the command that installs anything missing (apt, dnf, pacman, zypper or Homebrew) and offers to run it.  Run it again any time to review your settings: Enter keeps a value and "-" clears it.
+   Then it checks the software tis-clone needs, shows the command that installs anything missing (apt, dnf, pacman, zypper or Homebrew) and offers to run it.  Run it again any time to review your settings: Enter keeps a value and "-" clears it.  It also makes ~/.tis and the files in it private (your password, and the TIS session in cookies.txt).
+
+   Edit your settings in ~/.tis/tis-clone.cfg, not the tis-clone.cfg in this folder: that's only the template setup.sh copies from.  To set up without questions (ie: from a script), copy a finished tis-clone.cfg to ~/.tis/ and run `./setup.sh < /dev/null`: it then asks and installs nothing, creates the folders and lists any missing software.
 
 3. Get a TIS subscription and log in:
    * Visit TIS (https://techinfo.toyota.com), create an account and buy a subscription.  A 2 day subscription is usually enough.
@@ -177,5 +181,5 @@ Building the website and PDFs
 * `toc2html.py toc.xml > toc.html` - navigation page for one manual (run by the downloaders).
 * `toc2topic.py toc.xml` - print the vehicle a manual is for, ie: `TOYOTA 2013-2018 RAV4` (tis-mkpdfs.sh uses it to name the PDF folder).
 * `tis-merge.sh TARGET` - copy the current folder into your website (step 5).
-* `make-iso.sh` - build an ISO image of the download (written for the Land Cruiser; edit the name and volume label first).
+* `make-iso.sh [NAME]` - make an ISO image (ie: for a DVD or USB stick) of the website and PDFs, `$DOWNLOAD_TO/NAME.iso` with spaces as `_`.  NAME is also the disc label (up to 32 characters); without it, the vehicle's name (ie: "TOYOTA 2013-2018 RAV4"), or "Toyota FSM" for a folder with several vehicles.  Needs mkisofs, genisoimage or xorriso.
 * Older helpers kept for reference, generally not needed anymore: `tis-pdfer.sh`, `tis-html2pdf.sh`, `tis-html2pdf2.sh`, `tis-xhtml2pdf.sh` (the old PDF method, which needed a `/t3Portal` link and couldn't keep links working).

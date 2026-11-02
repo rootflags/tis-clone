@@ -7,7 +7,9 @@
 # review them; Enter keeps the current value.  Then it checks the software tis-clone needs and creates
 # the folders.
 #
-# Without a terminal (ie: from a script) it doesn't ask anything, and only creates the config and folders.
+# Without a terminal (ie: from a script, or "./setup.sh < /dev/null") it doesn't ask or install anything: it
+# creates the config and folders and lists any missing software.  To set things up unattended, copy a
+# finished tis-clone.cfg to ~/.tis/ first (or edit it afterwards); setup.sh then only checks it.
 #
 
 FOLDER=`cd \`dirname $0\` && pwd`
@@ -56,7 +58,7 @@ else
 	echo "Creating ${CFG} from ${FOLDER}/tis-clone.cfg"
 	mkdir -p ${CONFIG_DIR}
 	# Private, since it can hold your TIS password
-	( umask 077; cp ${FOLDER}/tis-clone.cfg ${CFG} )
+	( umask 077; sed -e '/^# ---- TEMPLATE ONLY/,/^# ---- (setup.sh leaves/d' ${FOLDER}/tis-clone.cfg > ${CFG} )
 	NEW=1
 fi
 . ${CFG}
@@ -133,11 +135,18 @@ elif [ ${NEW} = 1 ]; then
 fi
 . ${CFG}
 
-# A password in the config must stay private
-if [ x"${TIS_PASSWORD}" != x ] && [ x"`ls -l ${CFG} | cut -c5-10`" != x------ ]; then
-	echo "Making ${CFG} private, since it holds your TIS password"
-	chmod 600 ${CFG}
-fi
+# private FILE MODE: make FILE readable only by you (MODE, ie: 600), saying so if it wasn't.  The config can
+# hold your password, the cookies are a live TIS session, and the last login page can name the account.
+private() {
+	[ -e "$1" ] || return
+	[ x"`ls -ld "$1" | cut -c5-10`" = x------ ] && return
+	echo "Making $1 private"
+	chmod $2 "$1"
+}
+private ${CONFIG_DIR} 700
+private ${CFG} 600
+[ x"${COOKIES}" != x ] && private "${COOKIES}" 600
+private ${CONFIG_DIR}/last-login-portal.html 600
 
 # ---- Dependencies -------------------------------------------------------------------------------
 # Everything is checked before anything is said, then the missing pieces are listed with the command that

@@ -21,6 +21,9 @@
 # ---------------------------------------------------------------------------
 #
 
+# The cookies are a live TIS session, and the saved portal page can name the account: nobody else may read them
+umask 077
+
 . ${HOME}/.tis/tis-clone.cfg
 . ${SCRIPT_BASE}/tis-log.sh
 
