@@ -348,7 +348,7 @@ def main():
     global ROOT
     ap = argparse.ArgumentParser(description="Save a vehicle's Flat Rate Manual from TIS's Flat Rate Manual application")
     ap.add_argument("vehicle", nargs=3, metavar="DIVISION MODEL YEARS", help="ie: LEXUS LX600 2024 (YEARS: 2024, 2022-2024, 2022,2024)")
-    ap.add_argument("--wait", type=float, help="seconds between requests (default TIS_WAIT in tis-clone.cfg, or 0.01)")
+    ap.add_argument("--wait", type=float, help="seconds between requests (default TIS_WAIT in tis-clone.cfg, or 0.5)")
     ap.add_argument("--pdf", action="store_true", help="make PDFs of the saved Flat Rate Manuals (no TIS requests)")
     args = ap.parse_args()
 

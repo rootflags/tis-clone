@@ -17,7 +17,7 @@
 # unless TIS_SKIP_FAILED=1 is set (tis-clone --continue sets it, to get past files TIS can't send).
 # Delete a path's lines (or the whole file) to force a refetch.
 #
-# It waits TIS_WAIT seconds (tis-clone.cfg; default 0.01) between requests; --wait overrides both.
+# It waits TIS_WAIT seconds (tis-clone.cfg; default 0.5) between requests; --wait overrides both.
 #
 # Usage:
 #   tis-fetch.py URL_OR_PATH ...           ie: tis-fetch.py /t3Portal/external/en/rm/RM30B0U/toc.xml
@@ -45,7 +45,7 @@ from tislog import tee_to_log
 TESTPAGE = "/t3Portal/staticcontent/en/techinfo/docs/glossary.pdf"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0"
 EXIT_SESSION = 75
-WAIT = 0.01                             # seconds between requests, if tis-clone.cfg has no TIS_WAIT
+WAIT = 0.5                              # seconds between requests, if tis-clone.cfg has no TIS_WAIT
 
 # Signs that TIS sent us to its login page instead of the document we asked for
 LOGIN_URL_RE = re.compile(r"concurrentLoginFailure|techInfoPortal/login|/openam/|prelogin", re.I)

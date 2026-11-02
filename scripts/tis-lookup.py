@@ -199,7 +199,7 @@ def main():
     ap.add_argument("--args", action="store_true", help="print only the tis-clone arguments")
     ap.add_argument("--ref-for", metavar="TOC.XML", help="ask for the model year of the vehicle a downloaded manual is for "
                     "and print its --ref value (MAKE:MODEL:YEAR)")
-    ap.add_argument("--wait", type=float, help="seconds between requests (default TIS_WAIT in tis-clone.cfg, or 0.01)")
+    ap.add_argument("--wait", type=float, help="seconds between requests (default TIS_WAIT in tis-clone.cfg, or 0.5)")
     args = ap.parse_args()
     if len(args.vehicle) > 3:
         ap.error("give at most MAKE MODEL YEAR")
