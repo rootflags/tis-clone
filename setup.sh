@@ -15,13 +15,16 @@ CONFIG_DIR=${HOME}/.tis
 CFG=${CONFIG_DIR}/tis-clone.cfg
 STOCK_SIID=1520435234586
 
-# set_var NAME VALUE: set NAME='VALUE' in $CFG, replacing its first NAME= or #NAME= line (or adding one).
-# Clearing a setting that's only there as a commented-out example leaves the example alone.
+# set_var NAME VALUE: set NAME='VALUE' in $CFG, replacing its first NAME= line, or if there's none its first
+# #NAME= line (or adding one).  Clearing a setting that's only there as a commented-out example leaves the
+# example alone.
 set_var() {
 	[ x"$2" = x ] && ! grep -q "^$1=" "${CFG}" && return
 	Q=$(printf '%s' "$2" | sed "s/'/'\\\\''/g")
-	SET_LINE="$1='$Q'" SET_NAME="$1" awk '
-		!done && $0 ~ ("^#?" ENVIRON["SET_NAME"] "=") { print ENVIRON["SET_LINE"]; done = 1; next }
+	SET_PAT="^$1="
+	grep -q "${SET_PAT}" "${CFG}" || SET_PAT="^#$1="
+	SET_LINE="$1='$Q'" SET_PAT="${SET_PAT}" awk '
+		!done && $0 ~ ENVIRON["SET_PAT"] { print ENVIRON["SET_LINE"]; done = 1; next }
 		{ print }
 		END { if (!done) print ENVIRON["SET_LINE"] }' "${CFG}" > "${CFG}.new" && cat "${CFG}.new" > "${CFG}"
 	rm -f "${CFG}.new"
@@ -67,6 +70,16 @@ fi
 if [ ! -f "${SCRIPT_BASE}/tis-fetch.py" ] || [ "`cd ${BASE} 2>/dev/null && pwd`" != "${FOLDER}" ]; then
 	echo "Setting BASE to ${FOLDER}, where tis-clone is installed (it was ${BASE})"
 	set_var BASE "${FOLDER}"
+fi
+
+# Older configs: let tis-clone --download-to (TIS_DOWNLOAD_TO) override DOWNLOAD_TO, on the line after it
+if ! grep -q 'TIS_DOWNLOAD_TO' "${CFG}" && grep -q '^DOWNLOAD_TO=' "${CFG}"; then
+	echo "Adding the line tis-clone --download-to needs to ${CFG}"
+	awk '{ print } !done && /^DOWNLOAD_TO=/ {
+		print "# \"tis-clone --download-to FOLDER\" (or TIS_DOWNLOAD_TO=FOLDER in front of any script) uses FOLDER instead"
+		print "DOWNLOAD_TO=${TIS_DOWNLOAD_TO:-${DOWNLOAD_TO}}"; done = 1 }' "${CFG}" > "${CFG}.new" &&
+		cat "${CFG}.new" > "${CFG}"
+	rm -f "${CFG}.new"
 fi
 
 if [ -t 0 ]; then

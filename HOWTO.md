@@ -43,8 +43,11 @@
          ~/tis-clone/tis-clone 23C0U --bm 18M0U            # a section with a different code (2013 Prius V)
          ~/tis-clone/tis-clone 18X0U --ref TOYOTA:Land_Cruiser:2013   # give the model year up front
          ~/tis-clone/tis-clone 30B0U --no-pdf              # skip the (slow) PDFs; the website doesn't need them
+         ~/tis-clone/tis-clone 30B0U --download-to ~/tis-download-rav4   # a folder other than DOWNLOAD_TO
 
    When asked for the model year (or with `--ref`) you can give one year (`2024`), several (`2022,2024`), a range (`2022-2024`) or `all`; Enter skips the Reference Information.  `--no-ref` skips the Reference Information, bulletins and Flat Rate Manual; `--no-sb` and `--no-frm` skip just the bulletins or the Flat Rate Manual.  `~/tis-clone/scripts/tis-lookup.py` prints the codes and the full command for a vehicle.
+
+   `--download-to FOLDER` downloads to FOLDER for that run instead of the `DOWNLOAD_TO` folder in your settings, so each vehicle can have its own folder without editing them.  `--resume` and `--continue` need the same `--download-to` again (tis-clone prints the full command when it stops).  To run one of the other scripts on that folder, put `TIS_DOWNLOAD_TO=FOLDER` in front of it, ie: `TIS_DOWNLOAD_TO=~/tis-download-rav4 ~/tis-clone/scripts/tis-report.py`.  Settings made before this option existed need one extra line, which `~/tis-clone/setup.sh` adds.
 
 5. Optional: if you keep a website with several vehicles, merge this download into it.  tis-merge.sh copies the download (with rsync, deleting nothing) into your site:
 
@@ -131,10 +134,10 @@ The best way around this problem is to set up a local webserver.  One you have y
 * nginx and other webservers will probably work as well.  Just make sure you can associate JSP files as text/html if the pages don't display correctly as the index.jsp file needs to do some dynamic data loading of XHTML and other file types to create the HTML pages you see.
 
 # Script reference
-All scripts are in `~/tis-clone/scripts` and read their settings from `~/.tis/tis-clone.cfg`.  Run the downloaders from `$DOWNLOAD_TO`.  Except for the ones that print a web page (`build-index.py`, `build-pdfidx.sh`, `toc2html.py` and `toc2topic.py`), every script also appends its output to `$DOWNLOAD_TO/tis-clone.log` (see Advanced B); `tis-log.sh` and `tislog.py` are the shared code that does this.
+All scripts are in `~/tis-clone/scripts` and read their settings from `~/.tis/tis-clone.cfg` (`TIS_DOWNLOAD_TO=FOLDER` in front of one uses FOLDER instead of `DOWNLOAD_TO`).  Run the downloaders from `$DOWNLOAD_TO`.  Except for the ones that print a web page (`build-index.py`, `build-pdfidx.sh`, `toc2html.py` and `toc2topic.py`), every script also appends its output to `$DOWNLOAD_TO/tis-clone.log` (see Advanced B); `tis-log.sh` and `tislog.py` are the shared code that does this.
 
 Everything at once
-* `~/tis-clone/tis-clone [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-pdf]` - without a CODE, ask for the make, model and year and look the codes up (tis-lookup.py); find which manuals TIS has, download them, the Reference Information (with `--ref`, which the lookup adds) and the framework, then (if nothing failed) run tis-urlstripper.sh, build-index.py, build-search.py and the PDF scripts (step 4).  `tis-clone --resume` carries on with the last command where it stopped.  `tis-clone --continue` does the same without retrying files that failed before, and builds the website and PDFs even if a download failed.
+* `~/tis-clone/tis-clone [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-pdf] [--download-to FOLDER]` - without a CODE, ask for the make, model and year and look the codes up (tis-lookup.py); find which manuals TIS has, download them, the Reference Information (with `--ref`, which the lookup adds) and the framework, then (if nothing failed) run tis-urlstripper.sh, build-index.py, build-search.py and the PDF scripts (step 4).  `tis-clone --resume` carries on with the last command where it stopped.  `tis-clone --continue` does the same without retrying files that failed before, and builds the website and PDFs even if a download failed.
 
 Logging in
 * `tis-login.sh [-u USERNAME] [-p PASSWORD] [-m 0|1]` - log in to TIS (with 2FA) and save the session in ~/.tis/cookies.txt.  Defaults come from TIS_USERNAME, TIS_PASSWORD and TIS_MFA in tis-clone.cfg.

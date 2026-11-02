@@ -16,17 +16,70 @@
 # is --resume without retrying files that FAILED before (ie: an image TIS sends back empty every time): it
 # carries on with the next file and, if a step still fails, goes on to the website and PDFs anyway.
 #
+# "--download-to FOLDER" downloads to FOLDER instead of DOWNLOAD_TO for this run.  It exports
+# TIS_DOWNLOAD_TO, which tis-clone.cfg uses in place of DOWNLOAD_TO, so every script it runs sees it.
+#
+
+# --download-to FOLDER, taken out of the arguments (the others keep their order and quoting)
+N=$#
+while [ ${N} -gt 0 ]; do
+	case "$1" in
+		--download-to|--download-to=*)
+			if [ "x$1" = x--download-to ]; then
+				# $2 is only the folder if it's one of the arguments we haven't moved yet
+				[ ${N} -lt 2 ] && { echo "--download-to needs a FOLDER"; exit 1; }
+				DIR=$2; shift; N=`expr ${N} - 1`
+			else
+				DIR=${1#--download-to=}
+			fi
+			case "${DIR}" in "~"/*) DIR=${HOME}/${DIR#??} ;; esac
+			shift; N=`expr ${N} - 1`
+			case "${DIR}" in
+				""|-*) echo "--download-to needs a FOLDER"; exit 1 ;;
+				*[!A-Za-z0-9/._+@:,~-]*) echo "--download-to: please use a folder name without spaces or other special characters"; exit 1 ;;
+				/*) ;;
+				*) DIR=`pwd`/${DIR} ;;
+			esac
+			mkdir -p "${DIR}" || exit 1
+			TIS_DOWNLOAD_TO=`cd "${DIR}" && pwd`
+			export TIS_DOWNLOAD_TO
+			continue ;;
+	esac
+	set -- "$@" "$1"
+	shift; N=`expr ${N} - 1`
+done
 
 . ${HOME}/.tis/tis-clone.cfg
+
+# The config has to take TIS_DOWNLOAD_TO (setup.sh adds the line), and FSM_URLBASE has to follow it
+if [ "x${TIS_DOWNLOAD_TO}" != x ]; then
+	if [ "x${DOWNLOAD_TO%/}" != "x${TIS_DOWNLOAD_TO}" ]; then
+		echo "--download-to needs this line in ${HOME}/.tis/tis-clone.cfg, after DOWNLOAD_TO=...:"
+		echo '    DOWNLOAD_TO=${TIS_DOWNLOAD_TO:-${DOWNLOAD_TO}}'
+		echo "(${BASE}/setup.sh adds it.)"
+		exit 1
+	fi
+	if [ "x${FSM_URLBASE%/}" != "x${DOWNLOAD_TO%/}/techinfo.toyota.com" ]; then
+		echo "--download-to needs FSM_URLBASE=\${DOWNLOAD_TO}/techinfo.toyota.com in ${HOME}/.tis/tis-clone.cfg"
+		echo "(it's ${FSM_URLBASE})"
+		exit 1
+	fi
+fi
+# Added to the commands we suggest, so they use the same folder
+AT=${TIS_DOWNLOAD_TO:+ --download-to ${TIS_DOWNLOAD_TO}}
+
 . ${SCRIPT_BASE}/tis-log.sh
 
+[ "x${TIS_DOWNLOAD_TO}" != x ] && echo "Downloading to ${DOWNLOAD_TO} (--download-to)"
+
 # Ctrl-C reaches the running download too; this runs once it has stopped (and saved its progress)
-trap 'echo ""; echo "Interrupted.  Run $0 --resume to carry on where it stopped."; exit 130' INT
+trap 'echo ""; echo "Interrupted.  Run $0 --resume${AT} to carry on where it stopped."; exit 130' INT
 
 usage() {
 	echo "Syntax: $0 [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-sb] [--no-frm] [--no-pdf]"
+	echo "        [--download-to FOLDER]"
 	echo "        $0                        ask for the make, model and year, and download everything for it"
-	echo "        $0 --resume | --continue"
+	echo "        $0 --resume | --continue  [--download-to FOLDER]"
 	echo "    ie: $0 30B0U                  everything TIS has for 30B0U"
 	echo "        $0 23C0U --bm 18M0U       23C0U, except the body/collision manual from 18M0U"
 	echo "        $0 --rm 30B0U --bm 30B0U  only the repair and body/collision manuals"
@@ -47,6 +100,8 @@ usage() {
 	echo "  --resume carry on with the last command where it stopped (after Ctrl-C, a reboot or a failed login)"
 	echo "  --continue  like --resume, but don't retry files that failed before, and build the website and PDFs"
 	echo "           even if some downloads failed (for files TIS can't send; tis-report.py lists them)"
+	echo "  --download-to  download to FOLDER instead of DOWNLOAD_TO in ~/.tis/tis-clone.cfg, ie: one folder"
+	echo "           per vehicle.  --resume and --continue need it again, to find that folder's last command."
 	echo ""
 	echo "Sections TIS doesn't have for CODE are skipped.  Run from anywhere; files go to ${DOWNLOAD_TO}."
 }
@@ -72,7 +127,7 @@ fi
 STATE=${DOWNLOAD_TO}/tis-clone.resume
 RESUME=0
 CONTINUE=0
-RERUN="$0 --resume"
+RERUN="$0 --resume${AT}"
 if [ "x$1" = x--resume ] || [ "x$1" = x--continue ]; then
 	if [ $# != 1 ]; then
 		echo "$1 reruns the last command, so it takes no other options"; exit 1
@@ -90,7 +145,7 @@ if [ "x$1" = x--resume ] || [ "x$1" = x--continue ]; then
 		# tis-fetch.py skips the files that FAILED before instead of retrying them
 		echo "(not retrying files that failed before)"
 		CONTINUE=1
-		RERUN="$0 --continue"
+		RERUN="$0 --continue${AT}"
 		TIS_SKIP_FAILED=1
 		export TIS_SKIP_FAILED
 	fi
@@ -334,7 +389,7 @@ if [ ${FAILED} != 0 ]; then
 			if (f) printf "%d of the %d files downloaded failed.\n", f, n }' ${DOWNLOAD_TO}/MANIFEST
 	fi
 	echo "If it keeps failing on the same files (ie: TIS sends them back empty) and you can do without them, run"
-	echo "$0 --continue: it doesn't retry them and builds the website and PDFs anyway."
+	echo "$0 --continue${AT}: it doesn't retry them and builds the website and PDFs anyway."
 	exit 1
 fi
 
