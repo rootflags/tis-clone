@@ -69,9 +69,13 @@ patch() {
 patch /t3Portal/external/en/ewdappu/system/js/ewd/ewd.js 'ElY.EsZ="/figsvg";ElY.Esa=".svg";ElY.Esb' \
 	's;ElY.EsZ="/fig";ElY.EsZ="/figsvg";g; s;ElY.Esa=".svgz";ElY.Esa=".svg";g; s;Ejx.EsZ="/fig";Ejx.EsZ="/figsvg";g; s;Ejx.Esa=".svgz";Ejx.Esa=".svg";g'
 
-# The wiring diagram viewer gets a link back to the front page, left of its Back button
+# The wiring diagram viewer gets a link back to the front page, left of its Back button.  And its sourcePath,
+# where it loads each manual's termdata.xml and diagrams from, must be this server: TIS sends
+# https://techinfo.toyota.com/t3Portal/external, so until tis-urlstripper.sh has run (tis-clone skips it when a
+# download failed) the viewer stays white, its requests to TIS blocked as cross-origin.
 patch /t3Portal/ewdappu/index.jsp 'title="Home"' \
-	's|<td class="left-align" id="back"|<td style="vertical-align:top;"><a href="/index.html" target="_top" title="Home" style="font:bold 9pt Arial, sans-serif; color:black; text-decoration:none; white-space:nowrap; padding:0px 8px;">\&lt; Home</a></td>&|'
+	's|<td class="left-align" id="back"|<td style="vertical-align:top;"><a href="/index.html" target="_top" title="Home" style="font:bold 9pt Arial, sans-serif; color:black; text-decoration:none; white-space:nowrap; padding:0px 8px;">\&lt; Home</a></td>&|
+	s|value="https\{0,1\}://techinfo\.toyota\.com\(:443\)\{0,1\}/t3Portal/external"|value="/t3Portal/external"|g'
 
 # Safari (Mac and every iOS browser) reloads an embedded SVG each time its <embed>'s width or height is
 # set, even to the same value.  The viewer sets them after every load, so Safari reloads forever and the
