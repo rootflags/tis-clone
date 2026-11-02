@@ -23,7 +23,9 @@
 #   tis-frm.py DIVISION MODEL YEARS          ie: tis-frm.py LEXUS LX600 2024, TOYOTA "Land Cruiser" 2016-2018
 #                                            (YEARS: 2024, 2022-2024, 2022,2024-2025)
 #   tis-frm.py --pdf DIVISION MODEL YEARS    make PDFs of what's been saved (no TIS requests), in
-#                                            $FSM_URLBASE/PDFs/<vehicle>/FlatRateManual-DIVISION_MODEL_YEAR.pdf
+#                                            $FSM_URLBASE/PDFs/<vehicle>/FlatRateManual-DIVISION_MODEL_YEAR.pdf,
+#                                            then remake PDFs/index.html and the front page
+#              [--pdf-folder FOLDER]         in PDFs/FOLDER/ instead (tis-clone: the repair manual's vehicle)
 #
 # Exit status: 0 done, 1 something failed, 75 the session expired and could not log in again.
 #
@@ -326,8 +328,37 @@ def folder_name(division, model, year):
     return re.sub(r"[ /]", "_", "%s_%s_%s" % (division, model, year)).upper()
 
 
-def make_pdfs(vehicle):
-    """tis-pdfbook.py each saved year into PDFs/<vehicle, from toc2topic.py>/"""
+def adopt(pdf):
+    """If pdf isn't there but a PDF of that name is in another PDFs/ folder, move it there (as tis-mkpdfs.sh)"""
+    if os.path.exists(pdf):
+        return
+    pdfs = os.path.join(ROOT, "PDFs")
+    for folder in sorted(os.listdir(pdfs)):
+        old = os.path.join(pdfs, folder, os.path.basename(pdf))
+        if os.path.isfile(old):
+            print("    moving it from %s" % os.path.dirname(old), flush=True)
+            os.replace(old, pdf)
+            try:
+                os.rmdir(os.path.dirname(old))
+            except OSError:
+                pass
+            return
+
+
+def remake_indexes():
+    """PDFs/index.html and the front page, which links it"""
+    for cmd, out in (([os.path.join(here, "build-pdfidx.sh"), ROOT], os.path.join(ROOT, "PDFs", "index.html")),
+                     ([os.path.join(here, "build-index.py")], os.path.join(ROOT, "index.html"))):
+        with open(out + ".new", "w") as fh:
+            ok = subprocess.call(cmd, stdout=fh) == 0
+        if ok:
+            os.replace(out + ".new", out)
+        else:
+            os.remove(out + ".new")
+
+
+def make_pdfs(vehicle, folder=None):
+    """tis-pdfbook.py each saved year into PDFs/<folder, or the vehicle from toc2topic.py>/"""
     rc = 0
     for year in tis_refsearch.years_of(vehicle[2]):
         name = folder_name(vehicle[0], vehicle[1], year)
@@ -336,11 +367,14 @@ def make_pdfs(vehicle):
             print("No Flat Rate Manual saved for %s %s %s (%s)" % (year, vehicle[0], vehicle[1], toc))
             continue
         topic = subprocess.run([os.path.join(here, "toc2topic.py"), toc], capture_output=True, text=True).stdout.strip()
-        pdf = os.path.join(ROOT, "PDFs", topic or name, "FlatRateManual-%s.pdf" % name)
+        pdf = os.path.join(ROOT, "PDFs", folder or topic or name, "FlatRateManual-%s.pdf" % name)
         os.makedirs(os.path.dirname(pdf), exist_ok=True)
         print("* Making %s" % pdf, flush=True)
+        adopt(pdf)
         if subprocess.call([os.path.join(here, "tis-pdfbook.py"), toc, pdf]) != 0:
             rc = 1
+    if os.path.isdir(os.path.join(ROOT, "PDFs")):
+        remake_indexes()
     return rc
 
 
@@ -350,13 +384,14 @@ def main():
     ap.add_argument("vehicle", nargs=3, metavar="DIVISION MODEL YEARS", help="ie: LEXUS LX600 2024 (YEARS: 2024, 2022-2024, 2022,2024)")
     ap.add_argument("--wait", type=float, help="seconds between requests (default TIS_WAIT in tis-clone.cfg, or 0.5)")
     ap.add_argument("--pdf", action="store_true", help="make PDFs of the saved Flat Rate Manuals (no TIS requests)")
+    ap.add_argument("--pdf-folder", metavar="FOLDER", help="with --pdf: put them in PDFs/FOLDER/ (default: the vehicle)")
     args = ap.parse_args()
 
     cfg = tis_refsearch.tis_fetch.load_cfg()
     tee_to_log(cfg)
     ROOT = os.path.realpath(cfg["FSM_URLBASE"])
     if args.pdf:
-        return make_pdfs(args.vehicle)
+        return make_pdfs(args.vehicle, args.pdf_folder)
     rs = tis_refsearch.RefSearch(cfg, tis_refsearch.tis_fetch.wait_of(cfg, args.wait))
     division, model = args.vehicle[0].upper(), args.vehicle[1]
     match = [m for m in rs.vehicles("model", division) if m.lower() == model.lower()]

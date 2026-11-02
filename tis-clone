@@ -412,6 +412,15 @@ echo "Website ready in ${FSM_URLBASE}.  To browse it: ${SCRIPT_BASE}/tis-serve.p
 if [ ${PDF} = 1 ]; then
 	echo ""
 	echo "########## Making PDFs (skip with --no-pdf)"
+	# All of this run's PDFs go in one folder, named after the first manual found (the repair manual's
+	# vehicle, ie: "TOYOTA 2016-2024 4Runner"), not one per manual title
+	PDFNAME=""
+	while read -r SECTION SCRIPT C P; do
+		case " ${TODO} " in *" ${SCRIPT}:${C} "*) ;; *) continue ;; esac
+		[ -f ${FSM_URLBASE}${P} ] || continue
+		PDFNAME=`${SCRIPT_BASE}/toc2topic.py ${FSM_URLBASE}${P}`
+		break
+	done < ${LIST}
 	if which wkhtmltopdf > /dev/null 2>&1 && ! wkhtmltopdf -V 2>/dev/null | grep -q "patched qt"; then
 		echo "** Warning: wkhtmltopdf is not the \"with patched qt\" build, so links inside the PDFs won't work."
 		echo "   Get it from https://wkhtmltopdf.org/downloads.html (every Linux distribution's own package lacks it)"
@@ -419,7 +428,7 @@ if [ ${PDF} = 1 ]; then
 	for C in ${CODES}; do
 		if done_before pdf:${C}; then
 			echo "PDFs for ${C}: finished last time, skipping"
-		elif ${SCRIPT_BASE}/tis-mkpdfs.sh ${C} `for P in ${PDFS}; do case ${P} in ${C}:*) echo ${P#*:} ;; esac; done`; then
+		elif ${SCRIPT_BASE}/tis-mkpdfs.sh ${PDFNAME:+-f "${PDFNAME}"} ${C} `for P in ${PDFS}; do case ${P} in ${C}:*) echo ${P#*:} ;; esac; done`; then
 			echo "DONE pdf:${C}" >> ${STATE}
 		else
 			FAILED=1
@@ -429,7 +438,7 @@ if [ ${PDF} = 1 ]; then
 	case " ${TODO} " in *" tis-frm.py:${REF} "*)
 		if done_before pdf:frm; then
 			echo "Flat Rate Manual PDF: finished last time, skipping"
-		elif ${SCRIPT_BASE}/tis-frm.py --pdf "${REF%%:*}" "`echo ${REF} | cut -d: -f2 | tr _ ' '`" "${REF##*:}"; then
+		elif ${SCRIPT_BASE}/tis-frm.py --pdf "${REF%%:*}" "`echo ${REF} | cut -d: -f2 | tr _ ' '`" "${REF##*:}" ${PDFNAME:+--pdf-folder "${PDFNAME}"}; then
 			echo "DONE pdf:frm" >> ${STATE}
 		else
 			FAILED=1

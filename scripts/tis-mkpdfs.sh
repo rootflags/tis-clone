@@ -5,6 +5,13 @@
 # With SECTIONs (rm, bm, nm, ewd: what tis-clone downloaded), only those manuals of the code; without, all
 # of them.  A PDF newer than everything it's made from is skipped (tis-pdfbook.py checks its own).
 #
+# The PDFs go in PDFs/FOLDER/ with -f FOLDER (tis-clone gives the repair manual's vehicle, so one run's PDFs
+# share a folder), else in PDFs/<the first manual's vehicle>/.  A PDF that's in another PDFs/ folder is moved
+# rather than made again, folders left empty are removed, and PDFs/index.html and the front page are remade.
+#
+# Usage:
+#   tis-mkpdfs.sh [-f FOLDER] GSIC_CODE [rm] [bm] [nm] [ewd]
+#
 
 . ${HOME}/.tis/tis-clone.cfg
 . ${SCRIPT_BASE}/tis-log.sh
@@ -20,8 +27,13 @@ if [ $? != 0 ]; then
 	exit 1
 fi
 
-if [ x$1 = x ]; then
-	echo "Syntax: $0 GSIC_CODE [rm] [bm] [nm] [ewd]"
+MODEL=""
+if [ "x$1" = x-f ]; then
+	MODEL=$2
+	shift 2
+fi
+if [ x$1 = x ] || [ "x${MODEL}" = x-f ]; then
+	echo "Syntax: $0 [-f FOLDER] GSIC_CODE [rm] [bm] [nm] [ewd]"
 	echo "    ie: $0 27J0U"
 	exit 1
 fi
@@ -43,8 +55,18 @@ up_to_date() {
 }
 PDFDIR=${FSM_URLBASE}/PDFs
 mkdir -p $PDFDIR
+[ "x${MODEL}" != x ] && mkdir -p "${PDFDIR}/${MODEL}"
 
-MODEL=""
+# adopt PDF: if PDF isn't there but a PDF of that name is in another PDFs/ folder, move it here
+adopt() {
+	[ -f "$1" ] && return
+	for P in "${PDFDIR}"/*/"${1##*/}"; do
+		[ -f "${P}" ] || continue
+		echo "    moving it from ${P%/*}"
+		mv -f "${P}" "$1"
+		break
+	done
+}
 
 # Repair, Body/Collision Repair and New Car Features manuals (and older PDF manuals with a toc.xml): one PDF
 # per manual, with working links and bookmarks.  See tis-pdfbook.py.
@@ -75,6 +97,7 @@ do
 		mkdir -p "${PDFDIR}/${MODEL}"
 	fi
 	echo "* Making ${PDFDIR}/${MODEL}/${TYPE}-${DOCID}.pdf"
+	adopt "${PDFDIR}/${MODEL}/${TYPE}-${DOCID}.pdf"
 	${SCRIPT_BASE}/tis-pdfbook.py ${TOC} "${PDFDIR}/${MODEL}/${TYPE}-${DOCID}.pdf" || FAILED=1
 done
 
@@ -84,6 +107,7 @@ gs_join() {
 	D=${EWD}/$1
 	[ -d ${D} ] || D=${EWD}/$2
 	OUT="${PDFDIR}/${MODEL}/ElectricalWiringDiagrams-EM${GSICCODE}-$2.pdf"
+	adopt "${OUT}"
 	HAS=0
 	for P in ${D}/pdf/*.pdf; do
 		[ -f "${P}" ] && HAS=1
@@ -141,6 +165,9 @@ do
 	gs_join system System
 done
 
-# Regenerate PDF index file(s)
+# Folders the PDFs were moved out of, then the PDF index and the front page (which links it)
+rmdir "${PDFDIR}"/*/ 2>/dev/null
+${SCRIPT_BASE}/build-pdfidx.sh ${FSM_URLBASE} > ${PDFDIR}/index.html.new && mv -f ${PDFDIR}/index.html.new ${PDFDIR}/index.html
+${SCRIPT_BASE}/build-index.py > ${FSM_URLBASE}/index.html.new && mv -f ${FSM_URLBASE}/index.html.new ${FSM_URLBASE}/index.html
 
 exit ${FAILED}
