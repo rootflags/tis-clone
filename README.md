@@ -15,7 +15,6 @@ This has been tested on Ubuntu Linux 20.04 LTS but should work on most Linux sys
 * Python 3 (tis-login.sh, tis-serve.py and the other tools) with the requests module for the downloader, tis-fetch.py.  "apt install python3 python3-requests".  Perl is no longer needed.
 
 Other Ubuntu packages which need to be installed:
-* Ghostscript (if you want to create PDFs: apt install ghostscript)
 * Poppler (pdfinfo, pdfseparate) and pdftk-java (if you want to split the multi-thousand page PDFs into smaller PDFs which are more manageable).  "apt install poppler-utils pdftk-java".
 * rsync (if you have an existing download and are updating the documents)
 * wkhtmltopdf, the "with patched qt" build from https://wkhtmltopdf.org/downloads.html, and pikepdf ("apt install python3-pikepdf"), if you want to create PDFs

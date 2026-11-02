@@ -77,7 +77,7 @@ trap 'echo ""; echo "Interrupted.  Run $0 --resume${AT} to carry on where it sto
 
 usage() {
 	echo "Syntax: $0 [CODE] [--rm CODE] [--ewd CODE] [--bm CODE] [--nm CODE] [--ref MAKE:MODEL:YEAR] [--no-ref] [--no-sb] [--no-frm] [--no-pdf]"
-	echo "        [--download-to FOLDER]"
+	echo "        [--doc PUBLICATION]... [--download-to FOLDER]"
 	echo "        $0                        ask for the make, model and year, and download everything for it"
 	echo "        $0 --resume | --continue  [--download-to FOLDER]"
 	echo "    ie: $0 30B0U                  everything TIS has for 30B0U"
@@ -90,6 +90,8 @@ usage() {
 	echo "  --ewd    Electrical Wiring Diagrams (EM, EWD or WD)"
 	echo "  --bm     Body/Collision Repair (BM, CR or BR)"
 	echo "  --nm     New Car Features (NM or NCF)"
+	echo "  --doc    another publication, by its full name (ie: --doc RM479U --doc OTH021U, the A340 transmission"
+	echo "           and OBD II manuals); any number of them.  tis-lookup.py adds every one TIS lists for the vehicle."
 	echo "  --ref    also download the vehicle's owner's, navigation and accessory manuals, maintenance guide,"
 	echo "           older Flat Rate Manual and other Reference Information, ie: --ref LEXUS:LX600:2024"
 	echo "           (write a space in the model as _, ie: TOYOTA:Land_Cruiser:2013).  On unless --no-ref"
@@ -160,6 +162,7 @@ RM=""
 EWD=""
 BM=""
 NM=""
+DOCS=""
 REF=""
 NOREF=0
 NOFRM=0
@@ -180,6 +183,12 @@ while [ $# -gt 0 ]; do
 				--bm) BM=$2 ;;
 				--nm) NM=$2 ;;
 			esac
+			shift 2 ;;
+		--doc)
+			if [ x$2 = x ] || [ `expr "x$2" : 'x[A-Za-z0-9]*$'` = 0 ]; then
+				echo "--doc needs a publication (letters and digits, ie: RM479U)"; exit 1
+			fi
+			case " ${DOCS} " in *" $2 "*) ;; *) DOCS="${DOCS} $2" ;; esac
 			shift 2 ;;
 		--ref)
 			# MAKE:MODEL:YEAR, with spaces in the model as _ (a space works too, if quoted)
@@ -207,7 +216,7 @@ done
 
 [ ${NOREF} = 1 ] && REF=""
 # Saved for --resume, which splits it on spaces again
-ARGS="${CODE}${RM:+ --rm ${RM}}${EWD:+ --ewd ${EWD}}${BM:+ --bm ${BM}}${NM:+ --nm ${NM}}${REF:+ --ref ${REF}}"
+ARGS="${CODE}${RM:+ --rm ${RM}}${EWD:+ --ewd ${EWD}}${BM:+ --bm ${BM}}${NM:+ --nm ${NM}}`for D in ${DOCS}; do printf ' --doc %s' ${D}; done`${REF:+ --ref ${REF}}"
 [ ${NOREF} = 1 ] && ARGS="${ARGS} --no-ref"
 [ ${NOFRM} = 1 ] && ARGS="${ARGS} --no-frm"
 [ ${NOSB} = 1 ] && ARGS="${ARGS} --no-sb"
@@ -220,7 +229,7 @@ RM=${RM:-$CODE}
 EWD=${EWD:-$CODE}
 BM=${BM:-$CODE}
 NM=${NM:-$CODE}
-if [ x${RM}${EWD}${BM}${NM} = x ]; then
+if [ "x${RM}${EWD}${BM}${NM}${DOCS}" = x ]; then
 	usage
 	exit 1
 fi
@@ -236,7 +245,11 @@ fi
 LIST=${TISTMPDIR}/tis-clone.$$
 trap 'rm -f ${LIST}' EXIT
 {
-	[ x${RM} != x ] && echo "rm dl-html-rm.sh ${RM} ${EN}/rm/RM${RM}/toc.xml"
+	if [ x${RM} != x ]; then
+		echo "rm dl-html-rm.sh ${RM} ${EN}/rm/RM${RM}/toc.xml"
+		# A transmission manual can be the code TIS lists most for a vehicle (ie: RM479U, 1995-2002 A340)
+		echo "rm dl-html-doc.sh RM${RM} ${EN}/atm/RM${RM}/toc.xml"
+	fi
 	if [ x${EWD} != x ]; then
 		for P in EM EWD ""; do
 			echo "ewd dl-html-ewd.sh ${EWD} ${EN}/ewdappu/${P}${EWD}/xhtml/termdata.xml"
@@ -254,6 +267,12 @@ trap 'rm -f ${LIST}' EXIT
 		echo "nm dl-html-nm.sh ${NM} ${EN}/ncf/NM${NM}/toc.xml"
 		echo "nm dl-html-ncf.sh ${NM} ${EN}/ncf/NCF${NM}/toc.xml"
 	fi
+	# --doc: wherever TIS keeps it (see dl-html-doc.sh)
+	for D in ${DOCS}; do
+		for T in rm atm cr ncf; do
+			echo "doc dl-html-doc.sh ${D} ${EN}/${T}/${D}/toc.xml"
+		done
+	done
 } > ${LIST}
 
 FAILED=0
@@ -299,6 +318,9 @@ else
 				echo "NOTFOUND no ${S} manual on TIS for ${C} (asked for with --${S})" >> ${STATE} ;;
 			*) echo "    (no ${S} manual on TIS for ${C}, skipping)" ;;
 		esac
+	done
+	for D in ${DOCS}; do
+		case " ${TODO} " in *" dl-html-doc.sh:${D} "*) ;; *) echo "    (no HTML publication ${D} on TIS, skipping)" ;; esac
 	done
 	if [ x"${TODO}" = x ]; then
 		echo "TIS has none of the manuals asked for.  Check the code(s)."
@@ -412,15 +434,14 @@ echo "Website ready in ${FSM_URLBASE}.  To browse it: ${SCRIPT_BASE}/tis-serve.p
 if [ ${PDF} = 1 ]; then
 	echo ""
 	echo "########## Making PDFs (skip with --no-pdf)"
-	# All of this run's PDFs go in one folder, named after the first manual found (the repair manual's
-	# vehicle, ie: "TOYOTA 2016-2024 4Runner"), not one per manual title
+	# All of this run's PDFs go in one folder, named after a manual's vehicle (ie: "TOYOTA 2016-2024 4Runner"),
+	# not one per manual title: the repair manual's, or of the manuals found, the one covering the fewest
+	# years (the 1998 Land Cruiser's repair manual, not its 1995-2002 A340 transmission manual)
+	TOCS=`while read -r SECTION SCRIPT C P; do
+		case " ${TODO} " in *" ${SCRIPT}:${C} "*) [ -f ${FSM_URLBASE}${P} ] && echo ${FSM_URLBASE}${P} ;; esac
+	done < ${LIST}`
 	PDFNAME=""
-	while read -r SECTION SCRIPT C P; do
-		case " ${TODO} " in *" ${SCRIPT}:${C} "*) ;; *) continue ;; esac
-		[ -f ${FSM_URLBASE}${P} ] || continue
-		PDFNAME=`${SCRIPT_BASE}/toc2topic.py ${FSM_URLBASE}${P}`
-		break
-	done < ${LIST}
+	[ "x${TOCS}" != x ] && PDFNAME=`${SCRIPT_BASE}/toc2topic.py --pick ${TOCS}`
 	if which wkhtmltopdf > /dev/null 2>&1 && ! wkhtmltopdf -V 2>/dev/null | grep -q "patched qt"; then
 		echo "** Warning: wkhtmltopdf is not the \"with patched qt\" build, so links inside the PDFs won't work."
 		echo "   Get it from https://wkhtmltopdf.org/downloads.html (every Linux distribution's own package lacks it)"

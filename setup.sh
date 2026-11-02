@@ -186,10 +186,8 @@ check() {
 		python3 -c "import requests" > /dev/null 2>&1 || MISSING_REQ="${MISSING_REQ} py-requests"
 		python3 -c "import pikepdf" > /dev/null 2>&1 || MISSING_PDF="${MISSING_PDF} py-pikepdf"
 	fi
-	for C in gs wkhtmltopdf; do
-		which ${C} > /dev/null 2>&1 || MISSING_PDF="${MISSING_PDF} ${C}"
-	done
-	for C in pdfinfo pdfseparate pdftk rsync; do
+	which wkhtmltopdf > /dev/null 2>&1 || MISSING_PDF="${MISSING_PDF} wkhtmltopdf"
+	for C in pdfinfo pdfseparate pdftk rsync gs; do
 		which ${C} > /dev/null 2>&1 || MISSING_OPT="${MISSING_OPT} ${C}"
 	done
 }
@@ -204,7 +202,7 @@ names() {
 report() {
 	[ -n "${MISSING_REQ}" ] && echo "** Missing, needed to download: `names ${MISSING_REQ}`"
 	[ -n "${MISSING_PDF}" ] && echo "** Missing, needed to make PDFs (or run tis-clone with --no-pdf): `names ${MISSING_PDF}`"
-	[ -n "${MISSING_OPT}" ] && echo "   Missing, optional (repdf needs pdfinfo, pdfseparate and pdftk; tis-merge.sh needs rsync): `names ${MISSING_OPT}`"
+	[ -n "${MISSING_OPT}" ] && echo "   Missing, optional (repdf needs pdfinfo, pdfseparate and pdftk; tis-merge.sh needs rsync; the old tis-html2pdf.sh needs gs): `names ${MISSING_OPT}`"
 	PKGS=""; PIPS=""
 	for N in ${MISSING_REQ} ${MISSING_PDF} ${MISSING_OPT}; do
 		P=`pkg ${N}`

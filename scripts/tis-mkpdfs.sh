@@ -16,8 +16,6 @@
 . ${HOME}/.tis/tis-clone.cfg
 . ${SCRIPT_BASE}/tis-log.sh
 
-GS="gs -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dNOPAUSE -dQUIET -dBATCH"
-
 cd ${FSM_URLBASE}
 echo "Running from $FSM_URLBASE"
 
@@ -84,6 +82,8 @@ do
 		EM*|EWD*|WD*) TYPE=ElectricalWiringDiagram ;;
 		*) TYPE=Manual ;;
 	esac
+	# ie: the A340 transmission manual, RM479U
+	case ${XHTML} in */document/atm/*) TYPE=TransmissionManual ;; esac
 	case ${DOCID} in
 		RM*) S=rm ;;
 		NM*|NCF*) S=nm ;;
@@ -101,9 +101,9 @@ do
 	${SCRIPT_BASE}/tis-pdfbook.py ${TOC} "${PDFDIR}/${MODEL}/${TYPE}-${DOCID}.pdf" || FAILED=1
 done
 
-# gs_join folder Name: join contents/folder/pdf/*.pdf (or contents/Name/...) unless already done.  With no
-# diagrams there's no PDF (Ghostscript would fail and leave a 2 KB stub, so one from an older run goes too).
-gs_join() {
+# ewd_join folder Name: join contents/folder/pdf/*.pdf (or contents/Name/...) with pdfjoin.py unless already
+# done.  With no diagrams there's no PDF (an older run's Ghostscript left a 2 KB stub then, so that goes too).
+ewd_join() {
 	D=${EWD}/$1
 	[ -d ${D} ] || D=${EWD}/$2
 	OUT="${PDFDIR}/${MODEL}/ElectricalWiringDiagrams-EM${GSICCODE}-$2.pdf"
@@ -118,11 +118,9 @@ gs_join() {
 		rm -f "${OUT}" "${OUT}.part"
 	elif up_to_date "${OUT}" ${D}/pdf; then
 		echo "    up to date, skipping"
-	elif ${GS} -sOutputFile="${OUT}.part" ${D}/pdf/*.pdf; then
-		mv -f "${OUT}.part" "${OUT}"
-	else
+	elif ! ${SCRIPT_BASE}/pdfjoin.py "${OUT}" ${D}/pdf/*.pdf; then
 		rm -f "${OUT}.part"
-		echo "    Ghostscript failed, no $2 PDF"
+		echo "    Joining them failed, no $2 PDF"
 		FAILED=1
 	fi
 }
@@ -153,16 +151,16 @@ do
 		mkdir -p "${PDFDIR}/${MODEL}"
 	fi
 	echo "* Overall PDFs"
-	gs_join overall Overall
+	ewd_join overall Overall
 
 	echo "* Relay PDFs"
-	gs_join relay Relay
+	ewd_join relay Relay
 
 	echo "* Routing PDFs"
-	gs_join routing Routing
+	ewd_join routing Routing
 
 	echo "* System PDFs"
-	gs_join system System
+	ewd_join system System
 done
 
 # Folders the PDFs were moved out of, then the PDF index and the front page (which links it)

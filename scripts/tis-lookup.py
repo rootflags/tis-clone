@@ -13,7 +13,12 @@
 #     To download them:  tis-clone 3900U --ref LEXUS:LX600:2024
 #
 # Most vehicles use one code for every manual; when a manual has a different one (ie: the 2013 Prius V's
-# body repair manual is BM18M0U, the rest 23C0U), the command names it (tis-clone 23C0U --bm 18M0U).
+# body repair manual is BM18M0U, the rest 23C0U), the command names it (tis-clone 23C0U --bm 18M0U).  Every
+# other repair, new car features and body/collision publication TIS lists for the vehicle is added with --doc,
+# whatever its name: ie: the 1998 Land Cruiser's A340 transmission (RM479U) and OBD II (OTH021U) manuals and
+# its collision manual (BRM080U) next to its repair manual (RM615U).  When TIS lists several repair manuals,
+# the one it mentions most is the main code, so tis-clone (which downloads them all either way) names the PDF
+# folder after the one covering the fewest years.
 # --ref also downloads the vehicle's Reference Information (owner's manuals, ...; see dl-ref.sh).
 #
 # Usage:
@@ -55,7 +60,9 @@ SECTIONS = [
     ("nm", "New Car Features", "lib_ncf_page", ("NCF", "NM")),
     ("bm", "Body/Collision Repair", "lib_cr_page", ("BM", "CR", "BR")),
 ]
-PUB_RE = re.compile(r"publicationNumber=([A-Z]+)([0-9A-Z]{4,6})[&\"']")
+PUB_RE = re.compile(r"publicationNumber=([A-Za-z0-9]+)[&\"']")
+# A publication tis-clone can name by section and code: a section's prefix, then a code starting with a digit
+CODE_RE = re.compile(r"^([A-Z]+?)([0-9][0-9A-Z]{3,5})$")
 
 
 def choose(what, options):
@@ -95,13 +102,21 @@ def match(answer, options):
 
 
 def codes(rs, division, model, year):
-    """{section: Counter((prefix, code))} from a Service Information search and its result tabs"""
+    """{section: Counter((prefix, code))} from a Service Information search and its result tabs, and the
+    other publications on the repair, new car features and body/collision tabs ([pub], for --doc)"""
     rs.si_search(division, model, year)
     found = collections.OrderedDict()
+    others = []
     for option, title, tab, prefixes in SECTIONS:
         page = rs.request("GET", TAB % tab)
-        found[option] = collections.Counter(pub for pub in PUB_RE.findall(html.unescape(page)) if pub[0] in prefixes)
-    return found
+        found[option] = collections.Counter()
+        for pub in PUB_RE.findall(html.unescape(page)):
+            m = CODE_RE.match(pub)
+            if m and m.group(1) in prefixes:
+                found[option][(m.group(1), m.group(2))] += 1
+            elif option != "ewd" and pub not in others:
+                others.append(pub)
+    return found, others
 
 
 def vehicle_of(toc, rs):
@@ -238,7 +253,7 @@ def main():
         model = pick("Model", given[1], rs.vehicles("model", division))
         year = pick("Year", given[2], rs.vehicles("year", model, division))
         print("\nLooking up the %s %s %s manuals ..." % (year, division, model), flush=True)
-        found = rs.retrying(codes, rs, division, model, year)
+        found, others = rs.retrying(codes, rs, division, model, year)
     except tis_refsearch.SearchFailed as e:
         print(e)
         return 1
@@ -251,6 +266,10 @@ def main():
         return 1
     main_code = best.get("rm") or collections.Counter(best.values()).most_common(1)[0][0]
     tis_args = [main_code] + ["--%s %s" % (opt, code) for opt, code in best.items() if code != main_code]
+    # Everything else on the tabs (but the wiring diagrams): other repair manuals, OBD II, collision, ...
+    docs = [prefix + code for opt in ("rm", "nm", "bm") for (prefix, code), n in found[opt].most_common()
+            if code != best[opt]] + others
+    tis_args += ["--doc %s" % pub for pub in docs]
     # The vehicle, for the Reference Information download (one word: tis-clone splits its saved arguments)
     tis_args.append("--ref %s:%s:%s" % (division, model.replace(" ", "_"), year))
 
@@ -260,6 +279,8 @@ def main():
         names = [prefix + code for (prefix, code), n in found[option].most_common()]
         print("    %-24s %s%s" % (title, names[0] if names else "none",
                                   "  (also: %s)" % ", ".join(names[1:]) if len(names) > 1 else ""), file=out)
+    if others:
+        print("    %-24s %s" % ("Other publications", ", ".join(others)), file=out)
     print("\nTo download them:  %s/tis-clone %s" % (os.path.dirname(cfg["SCRIPT_BASE"]), " ".join(tis_args)), file=out)
     print("(--ref also downloads the owner's manuals and other Reference Information; see dl-ref.sh)", file=out)
     if args.args:
