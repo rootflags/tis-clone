@@ -265,15 +265,17 @@ curl -s -o "$TMP_DIR/portal.html" -w "%{http_code}\n" \
 
 HTTP_STATUS=$(cat "$TMP_DIR/http_status.txt")
 
-# Debug: show what cookies were collected
-echo "    Cookies collected:"
-grep -v '^#' "$TMP_COOKIE" | awk '{print "      " $6}' || echo "      (none)"
-
 SESSION_COOKIE=$(grep -i "T3SESSIONID" "$TMP_COOKIE" 2>/dev/null || true)
+
+# What the portal gave us, for the error messages below
+cookie_names() {
+    echo "       Cookies received: $(grep -v '^#' "$TMP_COOKIE" | awk 'NF >= 7 {printf "%s ", $6}')"
+}
 
 if [ -z "$SESSION_COOKIE" ]; then
     echo ""
     echo "ERROR: No T3SESSIONID cookie received. HTTP status: $HTTP_STATUS"
+    cookie_names
     [ "$HTTP_STATUS" = "000" ] && echo "       Could not connect to TIS (000).  The portal may be down or overloaded; try again later."
     if [ -s "$TMP_DIR/portal.html" ]; then
         echo "       Portal page snippet:"
@@ -282,9 +284,9 @@ if [ -z "$SESSION_COOKIE" ]; then
     exit 1
 fi
 
-# The portal landing page is not a reliable sign of success (TIS sometimes answers it with a 403 even
-# though the session works), so fetch a subscriber-only PDF with the new cookies, as confirm-login.sh
-# does.  Try a few times since the portal can be slow or drop connections.
+# The portal page is only fetched for the session cookie: TIS often answers it with a 403 even though the
+# session works.  Success means a subscriber-only PDF downloads with the new cookies (the check tis-fetch.py
+# also makes).  Try a few times since the portal can be slow or drop connections.
 TESTPAGE="/t3Portal/staticcontent/en/techinfo/docs/glossary.pdf"
 for TRY in 1 2 3; do
     curl -s -o "$TMP_DIR/test.pdf" -m 60 -A "$USER_AGENT" -b "$TMP_COOKIE" "$WEBSITE$TESTPAGE"
@@ -296,8 +298,7 @@ done
 if [ -f "$TMP_DIR/test.pdf" ]; then
     cp "$TMP_COOKIE" "$COOKIE_FILE"
     echo ""
-    echo "Login successful! Cookies saved to: $COOKIE_FILE"
-    [ "$HTTP_STATUS" = "200" ] || echo "         (The portal page answered HTTP $HTTP_STATUS, but the session works.)"
+    echo "Login successful (checked by downloading a subscriber-only page).  Cookies saved to: $COOKIE_FILE"
 else
     # Keep the page TIS returned so we can see why (concurrent login, account locked, outage, ...)
     cp "$TMP_DIR/portal.html" "$(dirname "$COOKIE_FILE")/last-login-portal.html" 2>/dev/null
@@ -305,5 +306,6 @@ else
     echo "ERROR: Got a session cookie, but it could not fetch the test page $TESTPAGE."
     echo "       Cookies NOT saved.  Portal page HTTP status: $HTTP_STATUS, saved to $(dirname "$COOKIE_FILE")/last-login-portal.html"
     echo "       Title: $(grep -io '<title>[^<]*' "$TMP_DIR/portal.html" 2>/dev/null | head -1 | sed 's/<title>//I')"
+    cookie_names
     exit 1
 fi

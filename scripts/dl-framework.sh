@@ -40,11 +40,11 @@ cp -a ${BASE}/website-framework/framework ${BASE}/website-framework/main.html ${
 		french_available en_unavailable es_unavailable fr_unavailable; do
 		echo /t3Portal/resources/images/language/en/${F}.png
 	done
-	# The TIS stylesheet; its images include the header bar that build-index.py and build-pdfidx.sh use
+	# The TIS stylesheet; its images include the header bar that build-index.py and build-pdfidx.sh use.
+	# (/favicon.ico and stylegraphics/clear.gif, header-left.gif and header-right.gif aren't asked for:
+	# TIS answers 404 for them, and clear.gif is copied below.)
 	echo /t3Portal/framework/skins/t3/css/all-t3.css
-	echo /favicon.ico
-	for F in stylegraphics/clear.gif stylegraphics/header-left.gif stylegraphics/header-right.gif \
-		resources/jsp/images/clear.gif resources/jsp/siviewer/icons/tis.png; do
+	for F in resources/jsp/images/clear.gif resources/jsp/siviewer/icons/tis.png; do
 		echo /t3Portal/${F}
 	done
 
@@ -52,8 +52,7 @@ cp -a ${BASE}/website-framework/framework ${BASE}/website-framework/main.html ${
 	# own navigation from toc2html.py, and only the siviewer icons above are used.
 } > ${LIST}
 
-# favicon.ico lives outside /t3Portal/
-${SCRIPT_BASE}/tis-fetch.py --scope / -i ${LIST}
+${SCRIPT_BASE}/tis-fetch.py -i ${LIST}
 RC=$?
 [ $RC = 75 ] && exit 75
 
