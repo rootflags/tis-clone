@@ -357,6 +357,10 @@ echo "Website ready in ${FSM_URLBASE}.  To browse it: ${SCRIPT_BASE}/tis-serve.p
 if [ ${PDF} = 1 ]; then
 	echo ""
 	echo "########## Making PDFs (skip with --no-pdf)"
+	if which wkhtmltopdf > /dev/null 2>&1 && ! wkhtmltopdf -V 2>/dev/null | grep -q "patched qt"; then
+		echo "** Warning: wkhtmltopdf is not the \"with patched qt\" build, so links inside the PDFs won't work."
+		echo "   Get it from https://wkhtmltopdf.org/downloads.html (every Linux distribution's own package lacks it)"
+	fi
 	for C in ${CODES}; do
 		if done_before pdf:${C}; then
 			echo "PDFs for ${C}: finished last time, skipping"
@@ -377,7 +381,7 @@ if [ ${PDF} = 1 ]; then
 		fi ;;
 	esac
 	if [ -d ${FSM_URLBASE}/PDFs ]; then
-		${SCRIPT_BASE}/build-pdfidx.sh > ${FSM_URLBASE}/PDFs/index.html
+		${SCRIPT_BASE}/build-pdfidx.sh ${FSM_URLBASE} > ${FSM_URLBASE}/PDFs/index.html
 		# The front page links the PDF index once it exists
 		${SCRIPT_BASE}/build-index.py > ${FSM_URLBASE}/index.html.new && mv -f ${FSM_URLBASE}/index.html.new ${FSM_URLBASE}/index.html
 	fi

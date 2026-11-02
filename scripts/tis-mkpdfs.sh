@@ -78,15 +78,28 @@ do
 	${SCRIPT_BASE}/tis-pdfbook.py ${TOC} "${PDFDIR}/${MODEL}/${TYPE}-${DOCID}.pdf" || FAILED=1
 done
 
-# gs_join folder Name: join contents/folder/pdf/*.pdf (or contents/Name/...) unless already done
+# gs_join folder Name: join contents/folder/pdf/*.pdf (or contents/Name/...) unless already done.  With no
+# diagrams there's no PDF (Ghostscript would fail and leave a 2 KB stub, so one from an older run goes too).
 gs_join() {
 	D=${EWD}/$1
 	[ -d ${D} ] || D=${EWD}/$2
 	OUT="${PDFDIR}/${MODEL}/ElectricalWiringDiagrams-EM${GSICCODE}-$2.pdf"
-	if up_to_date "${OUT}" ${D}/pdf; then
+	HAS=0
+	for P in ${D}/pdf/*.pdf; do
+		[ -f "${P}" ] && HAS=1
+		break
+	done
+	if [ ${HAS} = 0 ]; then
+		echo "    no $2 diagrams, skipping"
+		rm -f "${OUT}" "${OUT}.part"
+	elif up_to_date "${OUT}" ${D}/pdf; then
 		echo "    up to date, skipping"
+	elif ${GS} -sOutputFile="${OUT}.part" ${D}/pdf/*.pdf; then
+		mv -f "${OUT}.part" "${OUT}"
 	else
-		${GS} -sOutputFile="${OUT}.part" ${D}/pdf/*.pdf && mv -f "${OUT}.part" "${OUT}"
+		rm -f "${OUT}.part"
+		echo "    Ghostscript failed, no $2 PDF"
+		FAILED=1
 	fi
 }
 

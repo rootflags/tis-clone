@@ -238,10 +238,6 @@ if [ -n "${MISSING_REQ}${MISSING_PDF}${MISSING_OPT}" ]; then
 		exit 1
 	fi
 fi
-if which wkhtmltopdf > /dev/null 2>&1 && ! wkhtmltopdf -V 2>/dev/null | grep -q "patched qt"; then
-	echo "** Warning: wkhtmltopdf is not the \"with patched qt\" build, so links inside PDFs won't work."
-	echo "   Get it from https://wkhtmltopdf.org/downloads.html"
-fi
 
 echo "Creating folders..."
 mkdir -p "${TISTMPDIR}" || exit 1
@@ -251,3 +247,12 @@ echo
 echo "Setup is done.  Next, log in to TIS and download, ie:"
 echo "    ${SCRIPT_BASE}/tis-login.sh"
 echo "    ${BASE}/tis-clone          (it asks for the make, model and year)"
+
+# Last, so it's not lost in the output above
+if which wkhtmltopdf > /dev/null 2>&1 && ! wkhtmltopdf -V 2>/dev/null | grep -q "patched qt"; then
+	echo
+	echo "** Warning: wkhtmltopdf is not the \"with patched qt\" build, so links inside the PDFs won't work."
+	echo "   `wkhtmltopdf -V 2>/dev/null` is installed.  Every Linux distribution's own package is unpatched; get"
+	echo "   the \"with patched qt\" build for your system from https://wkhtmltopdf.org/downloads.html"
+	echo "   (or run tis-clone with --no-pdf)."
+fi

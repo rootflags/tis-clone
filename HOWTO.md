@@ -107,7 +107,7 @@ F. Build the front page, the search and the PDF index.  Rerun them after downloa
          ~/tis-clone/scripts/build-search.py
          cd $DOWNLOAD_TO/techinfo.toyota.com
          for F in $(find t3Portal/external -name toc.html); do ~/tis-clone/scripts/toc2html.py ${F%.html}.xml > $F; done
-         ~/tis-clone/scripts/build-pdfidx.sh > $DOWNLOAD_TO/techinfo.toyota.com/PDFs/index.html
+         ~/tis-clone/scripts/build-pdfidx.sh $DOWNLOAD_TO > $DOWNLOAD_TO/techinfo.toyota.com/PDFs/index.html
 
 * build-search.py makes each manual's search index, and remaking the menus (the `for` line) adds the search box below each manual's menu.  Type a word, a DTC (P0420) or the start of one (P04) and it lists the pages with every word typed under the box: title, section and the text around the match, best matches first.  Click one to open it; the menu closes whatever was open and opens to that page, and both are shown in bold.  Clear the box (or press Esc) to hide the results.  Reference Information, bulletins and the Flat Rate Manual are searched by title.  It all runs in the browser, so it works on any web server, and nothing extra loads until you click the search box.  To take it out again, delete the manuals' `search` folders and remake the menus the same way.
 
@@ -168,7 +168,7 @@ Building the website and PDFs
 * `build-search.py [--force] [FOLDER | toc.xml ...]` - make each manual's search index (`search/` next to its toc.xml) for the search box in its menu (`website-framework/framework/tis-search.js`); manuals whose index is up to date are skipped (Advanced F).
 * `build-index.py [FOLDER] > index.html` - front page listing every downloaded manual (Advanced F), plus a Fluid Capacities entry, a page it writes next to it (fluids.html) linking each repair manual's service data pages that give fluid capacities (on newer manuals one MAINTENANCE page per model year range; on older ones the engine cooling and lubrication, transfer, ... pages).
 * `tis-serve.py [-p PORT] [-b ADDRESS] [FOLDER]` - serve the download for browsing (see below).  If the port is in use, it uses the next free one.
-* `tis-mkpdfs.sh IDENTIFIER [rm] [bm] [nm] [ewd]` - make the PDFs (Advanced E), using `tis-pdfbook.py` for each manual and Ghostscript for the wiring diagrams; `build-pdfidx.sh` makes the PDF index page.  With sections, only those manuals of the code (tis-clone passes the ones it downloaded).  A PDF that's newer than everything it's made from is skipped, so rerunning it only remakes what changed.
+* `tis-mkpdfs.sh IDENTIFIER [rm] [bm] [nm] [ewd]` - make the PDFs (Advanced E), using `tis-pdfbook.py` for each manual and Ghostscript for the wiring diagrams; `build-pdfidx.sh [FOLDER]` makes the PDF index page for FOLDER (the download folder, or the techinfo.toyota.com folder in it; default `$DOWNLOAD_TO` from tis-clone.cfg).  A wiring diagram section with no diagrams gets no PDF.  With sections, only those manuals of the code (tis-clone passes the ones it downloaded).  A PDF that's newer than everything it's made from is skipped, so rerunning it only remakes what changed.
 * `tis-pdfbook.py TOC.XML OUT.PDF [-j JOBS] [--force]` - make one PDF of a manual, with working internal links and bookmarks from its toc.xml.  It skips an OUT.PDF that's newer than the manual's files, unless `--force`.
 * `repdf PDF ...` - split and re-merge PDF files.
 * `toc2html.py toc.xml > toc.html` - navigation page for one manual (run by the downloaders).
